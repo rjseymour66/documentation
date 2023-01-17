@@ -5,7 +5,7 @@ description: >
   Descibes the basic data structures in Go.
 ---
 
-## Todo
+### Todo
 
 0. How to instantiate each type:
     - string, bool (false is the zero type), int, float
@@ -36,13 +36,13 @@ description: >
 11. Describe how to write Cobra CLI tools w Viper
 12. How do build tags work? [Digital Ocean](https://www.digitalocean.com/community/tutorials/customizing-go-binaries-with-build-tags). They let you include and exclude files from your build and your tests according to different criteria.
 
-## Linux stuff
+### Linux stuff
 
 Write to a file from with cat:
 
 ```bash
 $ cat << EOF > filename
-# enter text
+## enter text
 > EOF
 ```
 
@@ -66,7 +66,7 @@ $ cp ../tool/{add.go,go.mod} .
 
 Creating `cron` job:
 ```bash
-$ crontab -e # opens visual editor
+$ crontab -e ## opens visual editor
 $ 
 ```
 Switch back to the previous working directory:
@@ -113,7 +113,7 @@ ok  	colstats	6.067s
 curl -L -XPOST -d '{"task":"Task 1"}' -H 'Content-Type: application/json' http://localhost:8080/todo
 ```
 
-#### Compressed files
+### Compressed files
 
 Unzip `.zip` files with `unzip`. Do not include a directory if you want to unzip it to the current working directory:
 ```bash
@@ -135,11 +135,11 @@ $ gzip -l *
                2946                6473  55.0% (totals)
 ```
 
-## Find a home...
+### Find a home...
 
 - deferred function calls are not executed when `os.Exit()` is called.
 
-## Go commands
+### Go commands
 
 Format code:
 ```go
@@ -154,7 +154,7 @@ $ go build
 ```
 Build the binary:
 ```shell
-$ go build # uses module name for binary name
+$ go build ## uses module name for binary name
 $ go build -o <binary-name>
 ```
 
@@ -165,9 +165,9 @@ $ go run .
 
 Run tests:
 ```shell
-# verbose output
+## verbose output
 $ go test -v
-# tests for a specific dir
+## tests for a specific dir
 $ go test -v ./<dirname>/
 $ go test -v ./cmd/
 ```
@@ -192,20 +192,20 @@ Get a list of possible values for `GOOS`, which is the current operating system 
 $ go tool dist list
 ```
 
-#### go mod
+### go mod
 
 Update the `go.mod` file with [mod commands](https://go.dev/ref/mod#mod-commands).
 List all go packages in the current directory tree:
 ```shell
-# list packages
+## list packages
 $ go list
-# list modules
+## list modules
 $ go list -m 
 ```
 
-## Basics
+### Basics
 
-#### Formatting verbs
+### Formatting verbs
 
 [Formatting verbs](https://pkg.go.dev/fmt#hdr-Printing)
 
@@ -217,7 +217,7 @@ if err != nil {
 ```
 For more info, read [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-add-extra-information-to-errors-in-go).
 
-#### Idioms
+### Idioms
 
 Use `if found...` to determine if an element exists in a list:
 ```go
@@ -237,7 +237,7 @@ func (hl *HostsList) Add(host string) error {
 
 The comma, ok idiom checks whether a value is in a map (??????)
 
-#### Arrays
+### Arrays
 
 ```go
 var array [5]int                        // standard declaration
@@ -255,7 +255,7 @@ array2 := [3]*string{new(string), new(string), new(string)}
 *array2[1] = "Blue"
 ```
 
-#### Slices
+### Slices
 
 Use the `...` operator to expand a slice into a list of values:
 
@@ -320,7 +320,7 @@ fmt.Printf("%v\n", append(s1, s2...))
 Output:
 [1 2 3 4]
 ```
-#### Maps
+### Maps
 
 ```go
 // create with make
@@ -347,7 +347,7 @@ var testResp = map[string]struct {
 	//...
 }
 ```
-# iota
+## iota
 
 The `iota` operator creates a set of constants that increase by 1 for each line. This is helpful to track state or lifecycle stages.
 
@@ -363,7 +363,7 @@ const (
 )
 ```
 
-#### Cross-compilation
+### Cross-compilation
 
 Build static go binaries for operating systems that are different than the one that you are building it on. Because you build a static binary, the target machine does not need any additional libraries or tools to run the binary.
 
@@ -374,7 +374,7 @@ $ GOOS=window go build
 // For a list of accepted GOOS values, see https://go.dev/src/go/build/syslist.go
 ```
 
-## go.mod and go.sum
+### go.mod and go.sum
 
 Go modules group related packages into a single unit to be versioned together. Because they track an application's dependencies, they ensure that users build the application with the same dependencies as the original developer.
 
@@ -382,7 +382,7 @@ Go modules allow you to write go programs outside of the $GOPATH directory, as i
 
 Go sum records the checksum for each module in the application to ensure that each build uses the correct version.
 
-## Project structure
+### Project structure
 
 ```
 .
@@ -396,13 +396,13 @@ Go sum records the checksum for each module in the application to ensure that ea
 
 ```
 
-#### run() function in main()
+### run() function in main()
 
 If you use the `main()` function to run all of the code, it is difficult to create integration tests. To fix this, break the `main()` function into smaller functions that you can test independently. Use the `run()` function as a coordinating function for the code that needs to run in `main()`. So, the `main()` function parses command line flags and calls the `run()` function.
 
 When you use the `run()` method strategy, you write unit tests for all the individual functions within `run()`, and you write an integration test for `run()`.
 
-## Print statements
+### Print statements
 
 ```go
 fmt.Errorf("Custom formatted error messages: %s", optionalErr)
@@ -418,13 +418,13 @@ func (s *stepErr) Error() string {
 
 ```
 
-## Equality
+### Equality
 
 ```go
 bytes.Equal(bSlice1, bSlice2)
 ```
 
-## Strings
+### Strings
 
 Initialize a buffer with string contents using the bytes.NewBufferString("string") func. This simulates an input (like STDIN):
 ```go
@@ -451,7 +451,7 @@ You can build strings using `fmt.Sprintf()`:
 u := fmt.Sprintf("%s/todo/%d", apiRoot, id)
 ```
 
-## Pointers
+### Pointers
 
 `*` either declares a pointer variable or dereferences a pointer. Dereferencing is basically following a pointer to the address and retrieving stored value.
 
@@ -477,7 +477,7 @@ test:		test string
 &test:		0xc00009e210
 ```
 
-## Environment variables
+### Environment variables
 
 Getting and checking if an environment variable is set:
 ```go
@@ -487,7 +487,7 @@ if os.Getenv("ENV_VAR_NAME") != "" {
 ```
 
 
-## Interfaces
+### Interfaces
 
 When possible, use interfaces as function arguments instead of concrete types to increase flexibility.
 
@@ -504,7 +504,7 @@ func (r *Receiver) String() string {
 
 fmt.Print(*r)
 ```
-#### io.Writer
+### io.Writer
 
 Commonly named `w` or `out`. Examples of `io.Writer`:
 - os.Stdout
@@ -548,9 +548,9 @@ if err := zw.Close(); err != nil {
 return out.Close()
 ```
 
-## Methods
+### Methods
 
-#### Constructors
+### Constructors
 
 Go doesn't have constructor methods, but it is a good idea to create them so that users instantiate structs correctly.
 
@@ -577,7 +577,7 @@ type config struct {
 ```
 When you create a `config` object, assign each field the value of a CLI flag.
 
-#### Embedded types, extending types
+### Embedded types, extending types
 
 Embedding types makes all the fields and methods of one type available in the to the embedding type.
 
@@ -625,7 +625,7 @@ func newTimeoutStep(name, exe, message, proj string, args []string, timeout time
 }
 ```
 
-#### Value recievers
+### Value recievers
 
 Use a value receiver when the method:
 - mutates the receiver
@@ -650,7 +650,7 @@ func concatInput(args ...string) {
 }
 ```
 
-## Errors
+### Errors
 
 Create custom errors in the `errors.go` file. You can use these errors during error handling instead of using error strings. Essentially, you are wrapping errors with additional messages to provide more information for the user while keeping the original error available for inspection (usually during tests) with `errors.Is(err, expectedErr)`.
 
@@ -680,11 +680,11 @@ if err != nil {
 }
 ```
 
-#### Custom error types
+### Custom error types
 
 
 
-#### Compact error checking
+### Compact error checking
 
 If a function or method returns only an error, you can assign any error and check it for nil on the same line:
 ```go
@@ -692,7 +692,7 @@ if err := returnErr(); err != nil {
     // handle error
 }
 ```
-#### Returning errors
+### Returning errors
 
 Return only an error if you want to check that a method performs an operation correctly:
 
@@ -710,16 +710,16 @@ if err := l.Get(todoFileName); err != nil {
 }
 ```
 
-## Data structures and formats
+### Data structures and formats
 
-#### Slices
+### Slices
 
 Add to a slice with append:
 ```go
 *sliceName = append(*sliceName, valToAppend)
 ```
 
-#### Structs
+### Structs
 
 Create a zero-value struct:
 ```go
@@ -732,9 +732,9 @@ john := person{}
 ```
 
 
-#### JSON
+### JSON
 
-#### Structs and struct tags
+### Structs and struct tags
 
 When you define a struct to model a JSON response or request, use struct tags to map a struct field to a field in the JSON object. 
 
@@ -747,7 +747,7 @@ type responseFormat struct {
 ```
 Capitalize the field name so that you can export it as JSON with Go's native JSON encoding.
 
-#### Encoding JSON to a stream
+### Encoding JSON to a stream
 
 Use the [json.Encoder](https://pkg.go.dev/encoding/json@go1.19.4#Encoder) and its `.Endcode()` method to write the program's memory representation of JSON (a struct) to an output stream (an `io.Writer`). `Encoder` accepts the writer, and `.Encode()` takes the values that you want to encode. You can chain the methods. For example:
 
@@ -765,7 +765,7 @@ if err := json.NewEncoder(&buffer).Encode(item); err != nil {
 }
 ```
 
-#### Decoding JSON from stream
+### Decoding JSON from stream
 
 The [json.Decoder](https://pkg.go.dev/encoding/json@go1.19.4#Decoder) is just like the `json.Encoder`, except that it reads from an input stream (`io.Reader`) and decodes JSON into its memory representation (a struct):
 
@@ -773,7 +773,7 @@ The [json.Decoder](https://pkg.go.dev/encoding/json@go1.19.4#Decoder) is just li
 
 ```
 
-#### Marshal methods
+### Marshal methods
 
 > **IMPORTANT**: Always pass pointers to `json.Marshall` and `json.Unmarshall`.
 
@@ -799,7 +799,7 @@ func (r *todoResponse) MarshallJSON() ([]byte, error) {
 The preceding method models a response with an anonymous struct, then returns the response in JSON format.
 
 
-#### Unmarshalling
+### Unmarshalling
 Unmarshalling transforms a JSON object into a memory representation that is executable.
 
 To unmarshall a JSON object into memory, pass the data and a pointer to the data structure that you want to store the data in:
@@ -818,7 +818,7 @@ var unmarshalled []person
 
 json.Unmarshall(data, &unmarshalled)
 ```
-## Files
+### Files
 
 If you need to create a temp file:
 ```go
@@ -839,7 +839,7 @@ Use [os.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata. T
 info, err := os.Stat(fileName)
 ```
 
-#### Opening a file
+### Opening a file
 
 Open a file with `os.OpenFile()`:
 ```go
@@ -852,9 +852,9 @@ if err != nil {
 defer f.Close()
 ```
 
-## Reading data
+### Reading data
 
-#### Reading from a file
+### Reading from a file
 
 Read data from a file with the `os` package. `ReadFile` reads the contents of a file and returns a `nil` error:
 ```go
@@ -867,7 +867,7 @@ filename := filepath.Base("/path/to/home.html")
 // filename == home.html
 ```
 
-#### Scanner for lines and words
+### Scanner for lines and words
 
 The Scanner type accepts an `io.Reader` and reads data that is delimited by spaces or new lines.
 
@@ -903,7 +903,7 @@ for scanner.Scan() {
     byteLength += len(scanner.Bytes())    
 }
 ```
-#### Reading CSV data
+### Reading CSV data
 
 Create a `.NewReader()` the same way that you create a `.NewScanner()` and read with the following methods:
 - `.Read()` returns a `[]string` that represents a row.
@@ -952,9 +952,9 @@ func csv2float(r io.Reader, column int) ([]float64, error) {
 ```
 
 
-## Writing data
+### Writing data
 
-#### Writing to a file
+### Writing to a file
 
 Write data to a file with the `os` package. `WriteFile` writes to an existing file or creates one, if necessary:
 ```go
@@ -967,7 +967,7 @@ os.WriteFile(filename, dataToWrite, perms)
 
 When you assign permissions in an programming language, you have to tell the program that you are using the octal base. You do this by beginning the number with a `0`. So, `0644` permissions means that the file owner has read and write permissions, and the group and all other users have read permissions.
 
-#### Buffers and bytes
+### Buffers and bytes
 
 Many functions return `[]byte`, so you might have to fill a buffer with data to return.
 
@@ -988,13 +988,13 @@ func byteStuff() []bytes {
 }
 ```
 
-#### tabWriter
+### tabWriter
 
 `tabwriter.Writer` writes tabulated data with formatted columns with consistent widths using tabs (`\t`).
 
 https://pkg.go.dev/text/tabwriter#pkg-overview
 
-# Contexts
+## Contexts
 
 If you are executing commands that must communicate over a network, you should use a timeout. To create a timeout, use `context.WithTimeout()`.
 
@@ -1022,7 +1022,7 @@ If the context expires because of the timeout, you can check the context's `.Err
         ...
 ```
 
-## Filesystem
+### Filesystem
 
 The `filepath` library creates cross-platform filepaths--they compile correctly for each supported OS.
 
@@ -1033,7 +1033,7 @@ if err ...
 ```
 
 
-## Flags
+### Flags
 
 `flag.<FunctionName>` lets you define CLI flags. For example, to create a flag that performs an action if the flag is provided, you can use `flag.Bool`.
 
@@ -1082,7 +1082,7 @@ flag.Usage = func() {
 func cliFunc(r io.Reader, useLines bool) {}
 cliFunc(os.Stdin, *lines)
 ```
-## Time
+### Time
 
 Get the current time:
 ```go
@@ -1104,7 +1104,7 @@ Create a ticker when you want to do something at a regular interval:
 
 ```
 
-## Building commands with os/exec
+### Building commands with os/exec
 
 ### Find the OS
 
@@ -1124,7 +1124,7 @@ if err cmd.Run(); err != nil {
 }
 ```
 
-#### Example 1
+### Example 1
 
 Create a command that adds a task to a todo application through STDIN. For brevity, this example omits error checking in some places:
 ```go
@@ -1156,7 +1156,7 @@ In the preceding example:
 6. Write the task to STDIN
 7. Run the command
 
-#### Example 2
+### Example 2
 
 Create a slice literal to store the parameters:
 ```go
@@ -1167,12 +1167,12 @@ params = append(params, arg2)
 exec.Command(/path/, params...)
 ```
 
-#### Useful exec. methods
+### Useful exec. methods
 
 ```go
 exec.LookPath(fileName string) // returns location of fileName in PATH or error
 ```
-#### Mocking a command during tests
+### Mocking a command during tests
 
 ```go
 func mockCmd(exe string, args ...string) *exec.Cmd {
@@ -1184,7 +1184,7 @@ func mockCmd(exe string, args ...string) *exec.Cmd {
 	return cmd
 }
 ```
-# Logging
+## Logging
 
 Use logs to provide feedback for background processes. To create a logger, you need to create:
 - [*log.logger](https://pkg.go.dev/log#Logger) type
@@ -1196,11 +1196,11 @@ l := log.New(io.Writer, "LOGGER PREFIX: ", log.LstdFlags)
 ```
 log.LstdFlags uses the default log flags, such as date and time.
 
-# Tests
+## Tests
 
 `iotest.TimeoutReader(r)` simulates a reading failure and returns a timeout error.
 
-#### Integration tests
+### Integration tests
 
 Integration tests test how the program behaves when interacted with from the outside world--how a user uses it. This means that you test the `main()` method.
 
@@ -1212,7 +1212,7 @@ Follow these general guidelines when running integration tests:
 3. Run the tests with `m.Run()`
 4. Clean up any artifacts with `os.Remove(artifactname)`
 
-#### General flow
+### General flow
 
 When you create a test, you need to set up an environment, execute the functionality that you are testing, then tear down any temporary files you created in the environment:
 
@@ -1229,7 +1229,7 @@ func TestMethod(t *testing.T) {
 }
 ```
 
-#### Test helpers with t.Helper()
+### Test helpers with t.Helper()
 
 Add `t.Helper()` to mark a function as a test helper.
 
@@ -1237,7 +1237,7 @@ You can defer a the cleanup function. If a helper function fails a test, Go prin
 
 You can also return a cleanup function to make sure that your tests leave no test artifacts in the filesystem. There is also a `t.Cleanup()` method that registers a cleanup function.
 
-#### Subtests with t.Run()
+### Subtests with t.Run()
 
 Use `t.Run()`, You can run subtests within a test function. `t.Run()` accepts two parameters: the name of the test, and an unnamed test function. Nest `t.Run()` under the main func Test* function to target functionality, such as different command line options:
 
@@ -1254,7 +1254,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-#### Package naming
+### Package naming
 
 Place `*_test.go` files in the same directory as the code that you are testing. When you declare the `package` in the test file, use the original package name followed by `_test`. For example:
 
@@ -1262,7 +1262,7 @@ Place `*_test.go` files in the same directory as the code that you are testing. 
 package original_test
 ```
 
-#### Table tests
+### Table tests
 
 1. Define your test cases as a slice of anonymous struct that contains the data required to run your tests and the expected results
 2. Iterate over this slice with a `for range` loop
@@ -1287,7 +1287,7 @@ func TestFilterOut(t *testing.T) {
 }
 ```
 
-#### Utilities
+### Utilities
 
 Create a temporary file if you need to test an action like deleting a file from the file system. Use `os.CreateTemp()`. Be sure to clean up with `os.Remove(tempfile.Name())`:
 
@@ -1295,7 +1295,7 @@ Create a temporary file if you need to test an action like deleting a file from 
 os.CreateTemp(".", )
 ```
 
-#### Error handling
+### Error handling
 
 The test object (`*testing.T`) provides the following methods troubleshoot during testing
 
@@ -1309,17 +1309,17 @@ t.Fatalf("Error message: %s", err) // Logf() + FailNow()
 t.Errorf("Error message: %s", err) // Logf() + Fail()
 ```
 
-#### Strategies
+### Strategies
 
 When testing file writes, use _goldenfiles_: files that contain the expected results and that you load during tests to validate output.
 
 > **IMPORTANT**: Put goldenfiles, and other testing files, in a directory called `testdata`. Go tooling ignores this directory when building and compiling the program.
 
-#### Integration testing with external resources
+### Integration testing with external resources
 
 If you are testing external commands that modify the state of an external resource, the testing conditions change after each test.
 
-## Templates
+### Templates
 
 Templates can write dynamic webpages, config files, emails, etc. These are the general steps:
 
@@ -1342,7 +1342,7 @@ Templates can write dynamic webpages, config files, emails, etc. These are the g
     ```
 4. Return or use the buffer somehow.
 
-## Benchmarking
+### Benchmarking
 
 Running Go benchmarks is similar to running tests:
 1. Write the benchmark functions using the `testing.B` type.
@@ -1351,7 +1351,7 @@ Running Go benchmarks is similar to running tests:
 You want to benchmark your tool according to the main use case, so create test files to replicate your workload.
 
 
-#### Example benchmark function
+### Example benchmark function
 
 The following benchmark test runs a tool on all CSV test files:
 ```go
@@ -1376,7 +1376,7 @@ In the preceding example:
 - `b.N` is the upper limit of the loop, which is adjusted to last about one second.
 - `io.Discard` implements the `io.Writer` interface, but does not write output to any resource.
 
-#### Benchmark run commands
+### Benchmark run commands
 
 Run the benchmark tool with the `-bench <regex>` parameter, where `regex` is a regular expression that matches the benchmark tests that you want to run. To skip regular tests in the test files, include `-run ^$` in the command. For example:
 ```go
@@ -1416,7 +1416,7 @@ Compare two benchmark files to measure improvements after optimizations:
 
 ```
 
-## Profiling tools
+### Profiling tools
 
 The Go profiler gives you a breakdown of where your program spends its time executing. You can determine which functions consume the most time and target them for optimization.
 
@@ -1536,7 +1536,7 @@ To view a relationship graph in a browser, use the `web` command:
 (pprof) web
 (pprof) quit
 ```
-#### Memory profiling
+### Memory profiling
 
 This is similar to running a benchmark, but use the `-memprofile` option:
 ```go
@@ -1578,7 +1578,7 @@ Showing top 10 nodes out of 11
     0.04GB  0.74% 99.89%     0.04GB  0.74%  bufio.NewReaderSize (inline)
 (pprof) 
 ```
-#### Total memory allocation
+### Total memory allocation
 
 Use the -benchmem flag to view the total memory allocation for a program. The following command uses `tee` to send the output to STDOUT and the file parameter:
 ```go
@@ -1592,7 +1592,7 @@ PASS
 ok  	colstats	5.837s
 ```
 
-#### Tracing
+### Tracing
 
 Tracing shows you how your application manages resources, such as network connections or file reads. 
 
@@ -1617,17 +1617,17 @@ $ go tool trace trace01.out
 2022/12/05 18:48:50 Splitting trace...
 2022/12/05 18:48:51 Opening browser. Trace viewer is listening on http://127.0.0.1:46209
 ```
-## Concurrency
+### Concurrency
 
 Go provides two strategies that maintain data integrity when you are writing concurrent programs:
 - Locks, such as Mutex
 - goroutines and channels
 
-#### Mutexes
+### Mutexes
 
 `RLock()` blocks and waits if the associated object is locked for writing. This provides safe concurrent read and write operations while allowing multiple reads to improve performance.
 
-#### Channels
+### Channels
 
 Channels allow goroutines to communicate with each other.
 
@@ -1640,7 +1640,7 @@ ch := make(chan type)
 done := make(chan struct{})
 ```
 
-#### WaitGroups
+### WaitGroups
 
 A WaitGroup is a mechanism that coordinates the goroutine execution. When you create a goroutine, add 1 to the WaitGroup. When a goroutine finishes, subtract 1 from the WaitGroup. Use `Wait()` to wait until all goroutines are finished so you can complete execution.
 
@@ -1648,7 +1648,7 @@ A WaitGroup is a mechanism that coordinates the goroutine execution. When you cr
 wg := sync.WaitGroup{}
 ```
 
-#### Scheduling contention and worker queues
+### Scheduling contention and worker queues
 
 This is when you create too many goroutines and they compete for work. The answer is to use worker queues.
 
@@ -1659,7 +1659,7 @@ Use `runtime.NumCPU()` to determine the number of available CPUs:
 
 ```
 
-#### Goroutines
+### Goroutines
 
 Goroutines are usually anonymous functions that follow the keyword `go`, so that they run independently of the `main()` function. Because they run independently of the `main()` function, go uses `WaitGroups`, a mechanism that blocks the `main()` method until all goroutines complete.
 
@@ -1771,7 +1771,7 @@ The select statement is similar to a switch statement. It blocks execution of th
 	}
 ```
 
-#### Locks
+### Locks
 
 The [Locker interface](https://pkg.go.dev/sync@go1.19.4#Locker) has methods that lock and unlock an object. Use this when you want to prevent concurrent access to an object during operations.
 
@@ -1781,7 +1781,7 @@ mu := &sync.Mutex{}
 ```
 
 
-# Signals
+## Signals
 
 Signals communicate events among running processes, such as SIGINT, the interrupt signal.
 
@@ -1816,11 +1816,11 @@ for {
 }
 ```
 
-# Sorting
+## Sorting
 
 The `sort` package provides functions that sort 
 
-# Cobra CLI
+## Cobra CLI
 
 TODO: Setup
 
@@ -1831,14 +1831,14 @@ TODO: Setup
    - Args: 
 4. Update the `Run` field to `RunE`. `RunE` returns a function so you can test it. The signature returns an error.
 
-#### Install
+### Install
 
 Download and install from the [Github repo](https://github.com/spf13/cobra).
 
 1. `$ go get -u github.com/spf13/cobra@latest`
 2. `$ go install github.com/spf13/cobra-cli@latest`
 
-#### Start a project
+### Start a project
 
 Use the `cobra-cli` tool to init a project:
 ```bash
@@ -1850,7 +1850,7 @@ $ cobra add <subcommand-name>
 ```
 This adds a new file with boilerplate code in the `/cmd` directory.
 
-#### Add subcommands
+### Add subcommands
 
 Cobra has a flag package is an alias to `pflag`, a replacement for Go's standard flag package that includes POSIX compliance.
 
@@ -1885,12 +1885,12 @@ For example:
 $ cobra-cli add list -p hostsCmd
 ```
 
-#### Command completion and docs
+### Command completion and docs
 
 
 
 
-## Viper
+### Viper
 
 Install [Viper](https://github.com/spf13/viper):
 
@@ -1898,7 +1898,7 @@ Install [Viper](https://github.com/spf13/viper):
 $ go get github.com/spf13/viper
 ```
 
-#### Initial setup
+### Initial setup
 
 ```go
 // cmd/root.go
@@ -1919,17 +1919,17 @@ func init() {
 }
 ```
 
-#### Persistent flags
+### Persistent flags
 
 Add these flags in the root.go file. Persistent flags are available to the command and all subcommands under that command.
 
-# Network connections
+## Network connections
 
-# Clients
+## Clients
 
 In Go, a single client can create multiple connections.
 
-#### Creating clients
+### Creating clients
 
 Go provides a default client, but you cannot customize it with functionality such as a connection timeout:
 
@@ -1942,11 +1942,11 @@ func newClient() *http.Client {
 }
 ```
 
-#### Model responses
+### Model responses
 
 You have to model responses with structs. Create a struct to model an individual resource and a struct to model the server response.
 
-#### Sending requests
+### Sending requests
 
 Create a generic method that can send any type of request and handle any response code. The `.Do()` method can send any type of request (GET, POST, PUT, DELETE, etc.).
 
@@ -2000,7 +2000,7 @@ func sendRequest(url, method, contentType string, expStatus int, body io.Reader)
 }
 ```
 
-#### CRUD functions
+### CRUD functions
 
 Use the following functions with the generic `sendRequest()` function for CRUD operations:
 
@@ -2016,7 +2016,7 @@ func completeItem(apiRoot string, id int) error {
 }
 ```
 
-#### Integration tests
+### Integration tests
 
 When you run unit tests, you are using local resources that mock the live API. You can run these as much as you'd like. However, to run integration tests, you need to run your client against the actual API. To make sure that you do not make too many requests to the actual API, use build constraints.
 
@@ -2051,11 +2051,11 @@ After you run the integration tests one time, add the `-count=1` tag to ensure t
 ```shell
 $ go test -v ./cmd -tags integration -count=1
 ```
-# Servers
+## Servers
 
 The `net/http` package provides the `ListenAndServer()` function that creates a default server. However, this function does not allow you to define timeouts to manage bad connections or server resources, so you should define custom server.
 
-#### Custom servers
+### Custom servers
 
 Create a custom server with the [`Server` type](https://pkg.go.dev/net/http#Server). The `Server` type is a struct with the following fields:
 
@@ -2097,14 +2097,14 @@ if err := s.ListenAndServe(); err != nil {
 }
 ```
 
-#### Multiplexers
+### Multiplexers
 
 A multiplexer maps incoming requests to the proper handler functions using the request URL. `net/http` provides the DefaultServeMux function that returns the default multiplexer, but you should define a custom multiplexer for the following reasons:
 - The default registers routes globally.
 - You can add dependencies to the routes.
 - Custom multiplexers allow integration testing
 
-#### HTTP handlers
+### HTTP handlers
 
 Handlers handle a request and responds to it. An object of type `Handler` satisfies the `Handler` field in a custom HTTP server.
 
@@ -2115,7 +2115,7 @@ You create the server, then use `HandleFunc` to register routes to handler funct
 - `http.HandleFunc` registers a handler with a multiplexer server. It accepts two arguments: the path as a `string`, and the handler function. It implements `ServeHTTP()`.
 - `http.NewServeMux()` returns a custom server. It implements `ServeHTTP()`.
 
-#### Router functions
+### Router functions
 
 ```go
 func todoRouter(todoFile string, l sync.Locker) http.HandlerFunc {
@@ -2185,9 +2185,9 @@ func newMux(todoFile string) http.Handler {
 }
 ```
 
-# HTTP general
+## HTTP general
 
-#### Status codes
+### Status codes
 
 Use `http.StatusText()` to return the text for an HTTP status code. For example:
 ```go
@@ -2201,7 +2201,7 @@ Go provides status code constants to make code more human readable. For example:
 `http.StatusBadRequest` 
 `http.StatusCreated` 201. request succeeded and led to the creation of a resource
 
-#### Request methods
+### Request methods
 
 Go provides constant values to identify request methods:
 
@@ -2211,7 +2211,7 @@ http.MethodPost
 ```
 
 
-# Repository pattern
+## Repository pattern
 
 The repository pattern is an interface to access data storage while decoupling your business login from your storage implementation.
 
@@ -2221,7 +2221,7 @@ The Repository Pattern requires two components:
 
 For example, the following 
 
-## Connecting to a database
+### Connecting to a database
 
 Connect to a SQL database using the [`database/sql`](https://pkg.go.dev/database/sql). You also need access to the database driver, which works with the `database/sql` package to implemet the details to interface with the database engine.
 
@@ -2242,7 +2242,7 @@ const (
 ```
 The SQLite driver automatically handles conversion between Go types and SQL types.
 
-# SQLite
+## SQLite
 
 SQLite databases are a single file with the .db extension. Saving the entire database in a file makes it more portable.
 
@@ -2289,12 +2289,12 @@ sqlite> SELECT COUNT(*) FROM interval;
 
 
 
-#### Connecting with Go
+### Connecting with Go
 
 SQLite requires C bindings, so makes sure CG0 is enabled:
 ```shell
 $ go env CGO_ENABLED
-1 # 1 means it is enabled
+1 ## 1 means it is enabled
 ```
 
 Sometimes, the driver issues warnings that do not affect functionality but can be pesky. Disable the warnings with the following command:
@@ -2339,7 +2339,7 @@ func NewSQLite3Repo(dbfile string) (*dbRepo, error) {
 }
 
 ```
-#### Constructing queries
+### Constructing queries
 
 You have to create queries as methods on the respoitory type to satisfy the interface. Generally, queries require the following steps:
 - Create a lock on the SQL storage
@@ -2417,7 +2417,7 @@ for rows.Next() {
 }
 ```
 
-# Conditional builds
+## Conditional builds
 
 Add build tags to control what files are included in a build:
 
@@ -2437,7 +2437,7 @@ Add build tags to control what files are included in a build:
 To verify which files Go will include in a build according to the tags, use `go list`. Use the `-f` option:
 
 ```shell
-# list all files
+## list all files
 $ go list -f '{{ .GoFiles }}' ./...
 [main.go]
 [app.go buttons.go grid.go notification.go summaryWidgets.go widgets.go]
@@ -2445,7 +2445,7 @@ $ go list -f '{{ .GoFiles }}' ./...
 [interval.go summary.go]
 [sqlite3.go]
 
-# list files with inmemory build tag
+## list files with inmemory build tag
 $ go list -tags=inmemory -f '{{ .GoFiles }}' ./...
 [main.go]
 [app.go buttons.go grid.go notification.go summaryWidgets.go widgets.go]
@@ -2453,7 +2453,7 @@ $ go list -tags=inmemory -f '{{ .GoFiles }}' ./...
 [interval.go summary.go]
 [inMemory.go]
 
-# list files with containers build tag
+## list files with containers build tag
 $ go list -tags=containers -f '{{ .GoFiles }}' ./...
 [main.go]
 [app.go buttons.go grid.go notification_stub.go summaryWidgets.go widgets.go]
@@ -2462,7 +2462,7 @@ $ go list -tags=containers -f '{{ .GoFiles }}' ./...
 [inMemory.go]
 ```
 
-# Compiling for different architectures
+## Compiling for different architectures
 
 Use `go env GO_VAR` to return the environment variable value. For example, the following commands describe the operating system and architecture of the machine:
 
@@ -2484,7 +2484,7 @@ pomo.exe: PE32+ executable (console) x86-64 (stripped to external PDB), for MS W
 Create a build script to automate builds for different operating systems and architectures. Add them in the `/scripts` directory:
 
 ```bash
-# cross_build.sh
+## cross_build.sh
 
 #!/bin/bash
 OSLIST="linux windows darwin"
@@ -2501,7 +2501,7 @@ for os in ${OSLIST}; do
     done
 done
 ```
-#### Dynamically and statically linked binaries
+### Dynamically and statically linked binaries
 
 By default, Go binaries are dynamically linked, which means that the binary loads any required shared libraries dynamically at run time. Set CGO_ENABLED to 0 to build a binary for a system that supports only statically shared libraries. Setting this value with the build command does not impact its go env variable value:
 
@@ -2524,13 +2524,13 @@ $ go env CGO_ENABLED
 
 ```
 
-# Containerization
+## Containerization
 
 Containers package your application and all the required dependencies using a standard image format, and they run the application in isolation from other processes running on the same system.
 
 A Dockerfile is a recipe for how to create an image. Go is well-suited for containerization because it creates a single binary that does not require additional runtimes or dependencies.
 
-#### Build options
+### Build options
 
 CGO_ENABLED=0
 : Enables statically linked binaries to make the application more portable. You can use the go binary with images that do not support shared libraries.
@@ -2548,14 +2548,14 @@ GOOS=linux
 Execute `go build` with these options and compare the binaries:
 
 ```shell
-# optimized for containers
+## optimized for containers
 $ CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -tags=containers
 $ ls -lh pomo
 -rwxrwxr-x 1 ryanseymour ryanseymour 7.2M Jan 12 23:59 pomo
 $ file pomo
 pomo: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, stripped
 
-# standard build
+## standard build
 $ go build
 $ ls -lh pomo
 -rwxrwxr-x 1 ryanseymour ryanseymour 13M Jan 13 00:01 pomo
@@ -2564,7 +2564,7 @@ pomo: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, i
 
 ```
 
-#### Dockerfile
+### Dockerfile
 
 After you build a binary that is optimized for containers, create a Dockerfile to build the image. The following Dockerfile creates an image with a regular user `pomo`, and copies the binary into the `/app` directory:
 
@@ -2611,7 +2611,7 @@ pomo/pomo                  latest    f5bbd680ac85   22 seconds ago   14.5MB
 
 
 ```
-#### Multistage builds
+### Multistage builds
 
 Multistage builds create smaller image sizing. The following Dockerfile uses Go's official image. With this image, you don't have to compile the binary before creating the image:
 
@@ -2651,9 +2651,9 @@ COPY --from=builder /distributing/pomo/pomo .
 CMD ["/pomo"]
 ```
 
-# Project setup
+## Project setup
 
-## Modules
+### Modules
 
 A Go code repository comprises of exactly one module. The module includes packages, and these packages include source files. To create a module, go to the top-level directory of the project and enter the following command:
 
@@ -2662,7 +2662,7 @@ go mod init <project-name>
 ```
 The preceding command creates a `go.mod` file in the top-level of your project that lists your project name at the top.
 
-## Packages
+### Packages
 
 Packages are directories in a go project. The name of the directory is the package name. For example, source files in the `go-src/stocks/` package are in the `stocks` package. At the top of the file, declare package names with `package <package-name>`, and import packages with the `import <package-name>` statement.
 > `import` statements use the fully-qualified package name. This begins with the module name containing the package. For example, `import go-src/<package-name>`
@@ -2671,9 +2671,9 @@ Prepend any imported package code with the package name, or an alias for the pac
 
 *main*: any program that has to run as an application must be in the `main` package.
 
-# Arrays
+## Arrays
 
-## Internals
+### Internals
 
 An array in Go is a fixed-length data type that contains a contiguous block of elements of the same type
 
@@ -2713,13 +2713,13 @@ array2 := [5]string{"Red", "Blue", "Green", "Yellow", "Pink"}
 array1 = array2
 ```
 
-# Slices
+## Slices
 
 Slices are built around the concept of dynamic arrays that can grow and shrink as you see fit.
 
 You can use the built-in function called append, which can grow a slice quickly with efficiency. You can also reduce the size of a slice by slicing out a part of the underlying memory
 
-## Internals
+### Internals
 
 Three fields of a slice:
 - pointer to the underlying array
@@ -2755,7 +2755,7 @@ slice := make([]int, 3)             // empty slice with make
 slice := []int{}                    // slice literal to create empty slice of integers
 ```
 
-## Working with slices
+### Working with slices
 
 When you make a slice of a slice, they share the same underlying array. You need to remember that you now have two slices sharing the same underlying array. Changes made to the shared section of the underlying array by one slice can be seen by the other slice.
 A slice of a slice cannot access elements of underlying array that are prior to the pointer
@@ -2825,7 +2825,7 @@ length := len(slice)    // 5
 capacity := cap(slice)  // 5?
 ```
 
-## Iterating over slices
+### Iterating over slices
 
 Use `for` with `range` to iterate over slices from the beginning:
 
@@ -2865,7 +2865,7 @@ func fName(slice []int) []int {
 }
 ```
 
-# Maps
+## Maps
 
 A map provides you with an unordered collection of key/value pairs. maps are unordered collections, and there’s no way to predict the order in which the key/value pairs will be returned because a map is implemented using a hash table
 The map’s hash table contains a collection of buckets. When you’re storing, removing, or looking up a key/value pair, everything starts with selecting a bucket. This is performed by passing the key—specified in your map operation—to the map’s hash function. The purpose of the hash function is to generate an index that evenly distributes key/value pairs across all available buckets.
@@ -2877,7 +2877,7 @@ The map key can be a value from any built-in or struct type as long as the value
 - functions
 - struct types that contain slices
 
-## Creating and initializing
+### Creating and initializing
 
 To create a map, use `make` or a map literal. The map literal is idiomatic:
 
@@ -2899,7 +2899,7 @@ colors["Red"] = "#da137"
 var colors map[string]string{}
 
 ```
-## Testing if values exist in a map
+### Testing if values exist in a map
 
 Test with the following 2 options:
 1. You can retrieve the value and a flag that explicitly lets you know if the key exists:
@@ -2919,7 +2919,7 @@ if value != "" {
 }
 ```
 
-## Iterating over maps with the for range loop
+### Iterating over maps with the for range loop
 
 This works the same as slices, except index/value -> key/value:
 
@@ -2944,7 +2944,7 @@ Use the built-in function `delete` to remove a value from the map:
 delete(colors, "Coral")
 ```
 
-## Passing maps to functions
+### Passing maps to functions
 
 Functions do not make copies of the map. Any changes made to the map by the function are reflected by all references to the map:
 
@@ -2973,13 +2973,13 @@ func removeColor(colors map[string]string, key string) {
 }
 ```
 
-# Type system
+## Type system
 
 Go is statically typed, which means that the compiler wants to know the type for every value in the program. This creates more efficient and secure code that is safe from memory corruption and bugs.
 
 Types tell the compiler how much memory to allocate (its size) and what the memory represents. Some types get their representation based on the machine architecture (64- vs 32-bit).
 
-## User-defined types
+### User-defined types
 
 There are 2 ways to declare a user-defined type in Go:
 1. Use the keyword `struct` to create a composite type:
@@ -3034,7 +3034,7 @@ type Distance int64
 type List []string
 ```
 
-## Methods
+### Methods
 
 Methods add behavior to user-defined types:
 
@@ -3084,7 +3084,7 @@ ryan.changeEmail("new@email.com")
 ```
 Go adjusts (dereferences) the pointer value to comply with the method's receiver. So, `sendEmail()` is operating against a copy of the value that `ryan` points to.
 
-## Reference types
+### Reference types
 When you decalure a reference type, the value is a header value that contains a pointer to the underlying data structure. The header contains a pointer, so you can pass a copy of any reference type and share the underlying data structure.
 
 The following are reference types:
@@ -3093,7 +3093,7 @@ The following are reference types:
 - channel
 - function types
 
-## Interfaces
+### Interfaces
 
 Interfaces are types that declare behavior. They are implemented by user-defined types through methods. If a type implements an interface with a method, then a value of that user defined type can be assigned to values of the interface type.
 
