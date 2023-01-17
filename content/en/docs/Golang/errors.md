@@ -5,12 +5,34 @@ description: >
   How to handle, create, and use errors.
 ---
 
-## Basic error handling
+Errors are values in Go. The following example is the most common format for error handling:
+```go
+value, err := funcThatReturnsValandErr() {
+    if err != nil {
+        // handle err
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
+    }
+}
+```
+
+The preceding example sends the error to STDERR and exits the program.
+
+
+### Compact error checking
+
+If a function or method returns only an error, you can assign any error and check it for `nil` on the same line:
+```go
+if err := returnErr(); err != nil {
+    // handle error
+}
+```
+### Basic error handling
 
 `fmt.Errorf` creates a custom formatted error:
 ```go
 return fmt.Errorf("Error: %s is not a valid string", s)
-```
+
 
 ### Compact error checking
 
