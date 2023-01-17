@@ -84,7 +84,7 @@ func Add(a *int, b int) error {
     return nil
 }
 ```
-When you ae returning an error, use STDERR instead of STDOUT to display error messages, and exit with `1`:
+When you are returning an error, use STDERR instead of STDOUT to display error messages, and exit with `1`:
 ```go
 if err := l.Get(todoFileName); err != nil {
     fmt.Fprintln(os.Stderr, err)
