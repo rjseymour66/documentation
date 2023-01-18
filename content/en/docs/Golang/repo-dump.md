@@ -1,8 +1,8 @@
 ---
-title: "Basic data structures"
+title: "Repo dump"
 weight: 20
 description: >
-  Descibes the basic data structures in Go.
+  Repo dump that needs reorg.
 ---
 
 ### Todo
@@ -711,13 +711,6 @@ if err := l.Get(todoFileName); err != nil {
 ```
 
 ### Data structures and formats
-
-### Slices
-
-Add to a slice with append:
-```go
-*sliceName = append(*sliceName, valToAppend)
-```
 
 ### Structs
 
@@ -2712,159 +2705,6 @@ var array1 [5]string
 array2 := [5]string{"Red", "Blue", "Green", "Yellow", "Pink"}
 array1 = array2
 ```
-
-## Slices
-
-Slices are built around the concept of dynamic arrays that can grow and shrink as you see fit.
-
-You can use the built-in function called append, which can grow a slice quickly with efficiency. You can also reduce the size of a slice by slicing out a part of the underlying memory
-
-### Internals
-
-Three fields of a slice:
-- pointer to the underlying array
-- length or number of elements the slice can access from the array
-- capacity or number of els that the slice has available for growth
-
-Trying to create a slice with a capacity that's smaller than the length is not allowed.
-
-Remember, if you specify a value inside the [ ] operator, you’re creating an array. If you don’t specify a value, you’re creating a slice.
-
-```go
-array := [3]int{10, 20, 30}
-slice := []int{10, 20, 30}
-```
-
-An idiomatic way of creating a slice is to use a slice literal
-A nil slice is the most common way you create slices in Go. They can be used with many of the standard library and built-in functions that work with slices.
-Empty slices are useful when you want to represent an empty collection, such as when a database query returns zero results
-
-```go
-slice := make([]string, 5)          // create a slice of strings with 5 capacity
-slice := make([]int, 3, 5)          // length 3, cap 5
-
-// Idiomatic slice literals
-slice := []int{10, 20, 30}          // slice literal
-slice := []string{99: ""}           // initialize the index that represents the length and capacity you need
-
-// nil slice is created by declaring a slice without any initialization
-var slice []int                     // nil slice
-
-// empty slice
-slice := make([]int, 3)             // empty slice with make
-slice := []int{}                    // slice literal to create empty slice of integers
-```
-
-### Working with slices
-
-When you make a slice of a slice, they share the same underlying array. You need to remember that you now have two slices sharing the same underlying array. Changes made to the shared section of the underlying array by one slice can be seen by the other slice.
-A slice of a slice cannot access elements of underlying array that are prior to the pointer
-
-Trying to access an element outside of its length will cause a runtime exception
-
-To use append, you need a source slice and a value that is to be appended
-
-When there’s no available capacity in the underlying array for a slice, the append function will create a new underlying array, copy the existing values that are being referenced, and assign the new value. So, if you append to the 3rd index of a slice with length 2, you get a new underlying array of length 3 with a capacity doubled the original array.
-
-Capacity is always doubled when the existing capacity of the slice is under 1,000 elements
-
-This third index gives you control over the capacity of the new slice. The purpose is not to increase capacity, but to restrict the capacity.
-
-When you include a third value in the slice operation (`slice := source[2:3:4]`), the last value restricts the capacity. So this copies the element at index 2, and includes a capacity of 2 but does not copy the element in source[3].
-Again, the first value represents the starting index position of the element the new slice will start with—in this case, 2. The second value represents the starting index position (2) plus the number of elements you want to include (1); 2 plus 1 is 3, so the second value is 3. For setting capacity, you take the starting index position of 2, plus the number of elements you want to include in the capacity (2), and you get the value of 4.
-Once that capacity is reached, it will allocate a new underlying array
-By having the option to set the capacity of a new slice to be the same as the length, you can force the first append operation to detach the new slice from the underlying array. Detaching the new slice from its original source array makes it safe to change.
-
-```go
-// Create a slice of strings.
-// Contains a length and capacity of 5 elements.
-source := []string{"Apple", "Orange", "Plum", "Banana", "Grape"}
-
-// Slice the third element and restrict the capacity.
-// Contains a length and capacity of 1 element.
-slice := source[2:3:3]
-
-// Append a new string to the slice. This doesn't change 'Banana' in the underlying array, it creates a new one
-slice = append(slice, "Kiwi")
-```
-
-```go
-// change value of slice
-slice[1] = 25
-
-// making a slice of a slice
-slice := []int{10, 20, 30, 40, 50}
-newSlice := slice[1:3]              // length 2, cap 4. 1 is the index position of the element that the new slice starts with
-// Length:   3 - 1 = 2
-// Capacity: 5 - 1 = 4
-
-// append
-newSlice = append(newSlice, 60)
-
-// Slice the third element and restrict the capacity.
-// Contains a length of 1 element and capacity of 2 elements.
-slice := source[2:3:4]
-```
-
-The built-in function append is also a variadic function. Use the ... operator to append all the elements of one slice into another.
-```go
-s1 := []int{1, 2}
-s2 := []int{3, 4}
-
-// Append the two slices together and display the results.
-fmt.Printf("%v\n", append(s1, s2...))
-
-Output:
-[1 2 3 4]
-```
-
-len returns the length of the slice, and cap returns the capacity:
-```go
-slice := []int{1, 2, 3, 4, 5}
-length := len(slice)    // 5
-capacity := cap(slice)  // 5?
-```
-
-### Iterating over slices
-
-Use `for` with `range` to iterate over slices from the beginning:
-
-```go
-for index, value := range <slice-name> {
-    fmt.Printf("index: %d, value: %d", index, value)
-}
-
-// discard the index with a '_'
-for -, value := range <slice-name> {
-    fmt.Printf("value: %d", value)
-}
-```
-
-`range` returns the index and a copy of the value for each iteration, not a reference. Don't use pointers (`&value`) because its an address that contains the copy of the `value` that is being copied.
-
-To iterate over a slice from an index other than 0, use a traditional for loop:
-
-```go 
-for i := 2; i < len(slice); i++ {
-    fmt.Printf("index: %d, value: %d", index, slice[i])
-}
-```
-### Passing slices between functions
-
-Pass slices by value, because slices only contain a pointer to the underlying array, its length, and capacity. This is why slices are great--no need for passing pointers.
-
-On 64-bit machines, each component of the slice requires 8 bytes (24 total).
-
-```go
-bigSlice := make([]int, 1e9)
-
-slice = fName(slice)
-
-func fName(slice []int) []int {
-    return slice
-}
-```
-
 ## Maps
 
 A map provides you with an unordered collection of key/value pairs. maps are unordered collections, and there’s no way to predict the order in which the key/value pairs will be returned because a map is implemented using a hash table
