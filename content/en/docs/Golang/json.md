@@ -5,50 +5,88 @@ description: >
   How to work with JSON data.
 ---
 
-#### Structs and struct tags
-
-When you define a struct to model a JSON response or request, use struct tags to map a struct field to a field in the JSON object. 
-
-Struct tags are enclosed in backticks (\`\`). Use the format `json:"json_field"`, using snake case when necessary. For example:
-
-```go
-type responseFormat struct {
-	Results todo.List `json:"results"`
-}
-```
-Capitalize the field name so that you can export it as JSON with Go's native JSON encoding.
-
-#### Encoding JSON to a stream
-
-Use the [json.Encoder](https://pkg.go.dev/encoding/json@go1.19.4#Encoder) and its `.Endcode()` method to write the program's memory representation of JSON (a struct) to an output stream (an `io.Writer`). `Encoder` accepts the writer, and `.Encode()` takes the values that you want to encode. You can chain the methods. For example:
-
-```go
-var buffer bytes.Buffer
-
-objToJSON := struct {
-    Value string `json:"value"`
-}{
-    Value: stringName
-}
-
-if err := json.NewEncoder(&buffer).Encode(item); err != nil {
-    // handle error
-}
-```
-
-#### Decoding JSON from stream
-
-The [json.Decoder](https://pkg.go.dev/encoding/json@go1.19.4#Decoder) is just like the `json.Encoder`, except that it reads from an input stream (`io.Reader`) and decodes JSON into its memory representation (a struct):
-
-```go
-
-```
-
-#### Marshal methods
 
 > **IMPORTANT**: Always pass pointers to `json.Marshall` and `json.Unmarshall`.
 
-Marshalling transforms a memory representation of an object into the JSON data format for storage or transmission. In other words, it returns data in JSON format.
+
+## Marshal into JSON
+
+Marshalling transforms an in-memory data representation (i.e. a struct) into the JSON format for storage or transmission over the network. 
+
+### Struct tags
+
+When you marshal data into JSON objects, you have to map the struct fields to the corresponding JSON object field. Use struct tags to associate a struct field to a field in the JSON object.
+
+Struct tags are enclosed in backticks (\`\`). For mulit-word fields, use snake case: `json:"json_field"`. Always capitalize the struct field name to export it. Otherwise, Go's native [`encoding/json`](https://pkg.go.dev/encoding/json) package cannot access it. For example:
+
+```go
+type jsonLog struct {
+	Level   string `json:"level"`
+	Message string `json:"message"`
+}
+```
+
+### Examples
+
+Your application uses a simple logger, and you want to store the log messages in JSON format. The logs use the following format:
+
+```go
+type log struct {
+	Level   string
+	Message string
+}
+```
+
+You want to store the logs in the following JSON format:
+
+```json
+{
+	"level": "Level",
+	"message": "This is the log message",
+}
+```
+#### In-memory data
+
+If you already have a `log` object in memory, you can use the `encoding/json` package directly:
+
+1. Add struct tags to the `log` defintion to associate the struct fields to the JSON object keys:
+   ```go
+	type jsonLog struct {
+		Level   string `json:"level"`
+		Message string `json:"message"`
+	}
+   ```
+2. Import the `encoding/json` package and marshall the object. The `.Marshal()` method accepts a pointer to a JSON object, and it returns a slice of `bytes` and an `error`:
+   ```go
+	inMemLog := log {
+		Level: "Debug",
+		Message: "This is the log message.",
+	}
+
+	jLog, err := json.Marshal(&inMemLog)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// work with jLog
+   ```
+
+### TODO
+
+In some circumstances, you might not have the `log` object in memory. For example, you might be reading from the log service REST API. You can create a method on the `jsonLog` type that returns the marshalled data.
+
+You must implement a method on the `jsonLog` type that mimics the [`Marshal()`](https://pkg.go.dev/encoding/json#Marshal) method:
+
+1. Implement a `Marshall()` method on a pointer reciever:
+   ```go
+	func (j *jsonLog) MarshalJSON() ([]byte, error) {
+		resp := jsonLog {
+			Level: j.Level,
+			Message: 
+		}
+	}
+   ```
+
 
 Create a MarshallJSON() method when you have to map structs to complex JSON objects. For example:
 
@@ -69,23 +107,71 @@ func (r *todoResponse) MarshallJSON() ([]byte, error) {
 ```
 The preceding method models a response with an anonymous struct, then returns the response in JSON format.
 
+## Unmarshal from JSON
 
-#### Unmarshalling
 Unmarshalling transforms a JSON object into a memory representation that is executable.
 
-To unmarshall a JSON object into memory, pass the data and a pointer to the data structure that you want to store the data in:
+### Example
+
+Your simple CRM application reads JSON-formatted data from the network in the following format:
+
+```json
+[
+	{"name": "Steve", "age": 21},
+	{"name": "Bob", "age": 68}
+]
+```
+
+You need to parse each JSON object into the following struct:
 ```go
 type person struct {
-    name    string
-    age     int
+	Name string
+	Age  int   
+}
+```
+> NOTE: When you unmarshall data, you do not need to add struct tags. Remember to capitalize (export) each field in the struct.
+
+1. To mimic data that might arrive over the network, create a slice of bytes that contains an array of two JSON objects:
+   ```go
+	jsonData := []byte(`[
+	{"name": "Steve", "age": 21},
+	{"name": "Bob", "age": 68}
+	]`)
+
+   ```
+2. Create a data structure to store the unmarshalled `jsonData`:
+   ```go
+   var people []person
+   ```
+3. Unmarshal the data into the slice:
+   ```go
+	if err := json.Unmarshal(jsonData, &people); err != nil {
+		fmt.Printf("Error: %v", err)
+	}
+   ```
+
+## Encoding JSON to a stream
+
+Use the [json.Encoder](https://pkg.go.dev/encoding/json@go1.19.4#Encoder) and its `.Endcode()` method to write the program's memory representation of JSON (a struct) to an output stream (an `io.Writer`). `Encoder` accepts the writer, and `.Encode()` takes the values that you want to encode. You can chain the methods. For example:
+
+```go
+var buffer bytes.Buffer
+
+objToJSON := struct {
+    Value string `json:"value"`
+}{
+    Value: stringName
 }
 
-var jsonData := `[
-{"name": "Steve", "age": "21"},
-{"name": "Bob", "age": "68"}
-]`
+if err := json.NewEncoder(&buffer).Encode(item); err != nil {
+    // handle error
+}
+```
 
-var unmarshalled []person
+## Decoding JSON from stream
 
-json.Unmarshall(data, &unmarshalled)
+The [json.Decoder](https://pkg.go.dev/encoding/json@go1.19.4#Decoder) is just like the `json.Encoder`, except that it reads from an input stream (`io.Reader`) and decodes JSON into its memory representation (a struct):
+
+```go
+
 ```
