@@ -58,8 +58,8 @@ If you already have a `log` object in memory, you can use the `encoding/json` pa
    ```
 2. Import the `encoding/json` package and marshall the object. The `.Marshal()` method accepts a pointer to a JSON object, and it returns a slice of `bytes` and an `error`:
    ```go
-	inMemLog := log {
-		Level: "Debug",
+	inMemLog := jsonLog{
+		Level:   "Debug",
 		Message: "This is the log message.",
 	}
 
@@ -69,6 +69,15 @@ If you already have a `log` object in memory, you can use the `encoding/json` pa
 	}
 
 	// work with jLog
+   ```
+   Currently, `jLog` is a series of bytes. You can verify this by printing it:
+   ```go
+	fmt.Println(jLog) // [123 34 108 101 118 ...]
+   ```
+
+   To print it in a human-readable format, cast it as a string:
+   ```go
+	fmt.Println(string(jLog)) // {"level":"Debug","message":"This is the log message."}
    ```
 
 ### TODO
