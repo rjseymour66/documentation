@@ -72,7 +72,6 @@ For example, use the `GOOS` environment variable with the `build` command to com
 
 ```go
 $ GOOS=window go build
-// 
 ```
 
 For a list of accepted GOOS values, see https://go.dev/src/go/build/syslist.go
