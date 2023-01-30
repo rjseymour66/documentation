@@ -161,6 +161,8 @@ type person struct {
 
 ## Encoding JSON to a stream
 
+The [json.Encoder](https://pkg.go.dev/encoding/json@go1.19.4#Encoder) accepts an `io.Writer`, and it encodes a struct in JSON format.
+
 Use the [json.Encoder](https://pkg.go.dev/encoding/json@go1.19.4#Encoder) and its `.Endcode()` method to write the program's memory representation of JSON (a struct) to an output stream (an `io.Writer`). `Encoder` accepts the writer, and `.Encode()` takes the values that you want to encode. You can chain the methods. For example:
 
 ```go
