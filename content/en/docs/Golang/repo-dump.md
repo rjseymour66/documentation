@@ -152,6 +152,11 @@ const (
 
 ```
 
+
+`/internal` directory is special because other projects cannot import anything  in this directory. This is a good place for domain code.
+If an entity needs to be accessible to all domain code, place its file in the `/internal` directory. Its package name is the project package.
+Each subdirectory in `/internal` is a domain.
+
 ### run() function in main()
 
 If you use the `main()` function to run all of the code, it is difficult to create integration tests. To fix this, break the `main()` function into smaller functions that you can test independently. Use the `run()` function as a coordinating function for the code that needs to run in `main()`. So, the `main()` function parses command line flags and calls the `run()` function.
