@@ -4,6 +4,23 @@ weight: 7
 description: >
   Working with basic types in Go.
 ---
+### Arrays
+
+```go
+var array [5]int                        // standard declaration
+array := [5]int{10, 20, 30, 40, 50}     // array literal declaration
+array := [...]int{10, 20, 30, 40, 50}   // Go finds the length based on num of elements
+array := [5]int{1: 10, 2: 20}           // initialize specific elements
+
+// pointers
+array := [5]*int{0: new(int), 1: new(int)}  // array of pointers
+array2 := [3]*string{new(string), new(string), new(string)}
+// dereference to assign values
+*array[0] = 10
+*array[1] = 20
+*array2[0] = "Red"
+*array2[1] = "Blue"
+```
 
 ## Slices
 
@@ -211,4 +228,85 @@ slice = fName(slice)
 func fName(slice []int) []int {
     return slice
 }
+```
+
+### Maps
+
+```go
+// create with make
+dict := make(map[string]int)
+
+// create and initialize as a literal IDIOTMATIC
+dict := map[string]string{"Red": "#da1337", "Orange": "#e95a22"}
+
+// slice as the value
+dict := map[int]string{}
+
+// assigning values with a map literal
+colors := map[string]string{}
+colors["Red"] = "#da137"
+
+// DO NOT create nil maps, they result in a compile error
+var colors map[string]string{}
+
+// map with a struct literal value
+var testResp = map[string]struct {
+	Status int 
+	Body string 
+} {
+	//...
+}
+```
+
+## Strings
+
+Initialize a buffer with string contents using the bytes.NewBufferString("string") func. This simulates an input (like STDIN):
+```go
+b := bytes.NewBufferString("string")
+```
+
+Use `io.WriteString` to write a string to a writer as a slice of bytes:
+```go
+output, err := io.WriteString(os.Stdout, "Log to console")
+if err != nil {
+    log.Fatal(err)
+}
+```
+This command seems to be used a lot with the `exec.Command` `os/exec` package?
+
+`.TrimSpace()` removes whitespace, `\n`, `\t`:
+```go
+func main() {
+	fmt.Println(strings.TrimSpace(" \t\n Hello, Gophers \n\t\r\n"))
+}
+```
+You can build strings using `fmt.Sprintf()`:
+```go
+u := fmt.Sprintf("%s/todo/%d", apiRoot, id)
+```
+
+## Pointers
+
+`*` either declares a pointer variable or dereferences a pointer. Dereferencing is basically following a pointer to the address and retrieving stored value.
+
+`&` accesses the address of a variable. Use this for the same reasons that you use a pointer receiver: mutating the object or in place of passing a large object in memory.
+
+Here are some bad examples:
+
+```go
+func main() {
+	test := "test string"
+	var ptr_addr *string
+	ptr_addr = &test
+	fmt.Printf("ptr_addr:\t%v\n", ptr_addr)
+	fmt.Printf("*ptr_addr:\t%v\n", *ptr_addr)
+	fmt.Printf("test:\t\t%v\n", test)
+	fmt.Printf("&test:\t\t%v\n", &test)
+}
+
+// output
+ptr_addr:	0xc00009e210
+*ptr_addr:	test string
+test:		test string
+&test:		0xc00009e210
 ```

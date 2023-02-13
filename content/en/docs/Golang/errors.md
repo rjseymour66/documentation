@@ -60,6 +60,14 @@ if err != nil {
 
 ### Wrap errors
 
+For errors, use `%w` to decorate the original error with additional information for the users. Essentially, you can customize the error message while also returning the default Go error:
+```go
+if err != nil {
+    return nil, fmt.Errorf("Cannot read data from file: %w", err)
+}
+```
+For more info, read [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-add-extra-information-to-errors-in-go).
+
 ## Custom error types
 
 Create custom errors in the `errors.go` file. You can use these errors instead of error strings. Essentially, you are wrapping errors with additional messages to provide more information for the user while keeping the original error available for inspection (usually during tests) with `errors.Is(err, expectedErr)`.
