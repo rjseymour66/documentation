@@ -94,3 +94,43 @@ static-check:
 ```
 
 ## Github Actions
+
+
+## Modules
+
+A Go code repository comprises of exactly one module. The module includes packages, and these packages include source files. To create a module, go to the top-level directory of the project and enter the following command:
+
+```bash
+go mod init <project-name>
+```
+The preceding command creates a `go.mod` file in the top-level of your project that lists your project name at the top.
+
+## Packages
+
+Packages are directories in a go project. The name of the directory is the package name. For example, source files in the `go-src/stocks/` package are in the `stocks` package. At the top of the file, declare package names with `package <package-name>`, and import packages with the `import <package-name>` statement.
+> `import` statements use the fully-qualified package name. This begins with the module name containing the package. For example, `import go-src/<package-name>`
+
+Prepend any imported package code with the package name, or an alias for the package: `alias package/name`. For example, `s go-src/stocks` allows you to prepend any code with `s.`, such as `s.Investment`.
+
+*main*: any program that has to run as an application must be in the `main` package.
+
+
+
+## Project structure
+
+```
+.
+├── cmd 
+│   └── todo
+│       ├── main.go         // config, parse, switch {} flags
+│       └── main_test.go    // integration tests (user interaction)
+├── go.mod
+├── todo.go                 // API logic for flags
+└── todo_test.go            // unit tests
+
+```
+
+
+`/internal` directory is special because other projects cannot import anything  in this directory. This is a good place for domain code.
+If an entity needs to be accessible to all domain code, place its file in the `/internal` directory. Its package name is the project package.
+Each subdirectory in `/internal` is a domain.
