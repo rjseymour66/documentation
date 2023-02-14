@@ -96,6 +96,12 @@ for name, tc := range tt {
 }
 ```
 
+## Testing dependencies
+
+### Stubs
+### Mocks
+### Fakes
+
 
 ## Integration tests
 

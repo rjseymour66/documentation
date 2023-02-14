@@ -4,7 +4,247 @@ weight: 7
 description: >
   Working with basic types in Go.
 ---
-### Arrays
+
+## Type system
+
+Go is statically typed, which means that the compiler wants to know the type for every value in the program. This creates more efficient and secure code that is safe from memory corruption and bugs.
+
+Types tell the compiler how much memory to allocate (its size) and what the memory represents. Some types get their representation based on the machine architecture (64- vs 32-bit).
+
+### User-defined types
+
+There are 2 ways to declare a user-defined type in Go:
+1. Use the keyword `struct` to create a composite type:
+```go
+type user struct {
+    name    string
+    age     int64
+    email   string
+}
+```
+After you define the struct, you can declare a variable of the type with a value or zero value:
+```go
+// Idiomatic: declare zero-values with var
+var bill user
+```
+
+You can also declare a struct literal, which is the declaration and values all in one:
+
+```go
+// add a comma after the last value
+ryan := user{
+    name:   "Ryan",
+    age:    38,
+    email:  "email@email.com",
+}
+
+// without the field names
+ryan := user{"Ryan", 38, "email@email.com"}
+
+// embedding user-defined types
+type superuser struct {
+    person      user
+    password    string
+}
+
+boss := superuser{
+    person: user{
+        name:   "Ryan",
+        age:    38,
+        email:  "email@email.com",
+    },
+    password:   "pword",
+}
+```
+
+2. Use an existing type as the specification for a new type:
+
+```go
+type Distance int64
+
+// lets you add methods to a slice. This is useful when you want to decalure behavior around a built-in or refernce type
+type List []string
+```
+
+### Methods
+
+Methods add behavior to user-defined types:
+
+```go
+func (r receiver) fName(p params) {}
+```
+
+The receiver binds the function to the specified type to create a method for the type. How the receiver is declared determines how Go operates on the type value. There are 2 types of receivers:
+
+1. value. When you declare a method using a value receiver, the method will always be operating against a copy of the value used to make the method call
+
+If adding or removing something from a value of this type need to create a new value, then use value receivers for your methods.
+
+```go
+func (u user) sendEmail()
+ryan := user{"Ryan", 38, "email@email.com"}
+ryan.sendEmail()
+```
+You can also call methods that are declared with a value receiver using a pointer:
+```go
+func (u user) sendEmail()
+ryan := &user{"Ryan", 38, "email@email.com"}
+ryan.sendEmail()
+```
+Go adjusts (dereferences) the pointer value to comply with the method's receiver. So, `sendEmail()` is operating against a copy of the value that `ryan` points to.
+
+2. pointer. When you call a method declared with a pointer receiver, the value used to make the call is shared with the method. Pointer receivers operate on the actual value, and any changes are reflected in the value after the call.
+
+Generally, use pointers when you are using nonprimitive values.
+
+If adding or removing something from a value of this type need to mutate the existing value, then use value receivers for your methods.
+
+```go
+func (u *user) changeEmail(email string) {
+    u.email = email
+}
+ryan := &user{"Ryan", 38, "email@email.com"}
+ryan.changeEmail("new@email.com")
+```
+You can also call methods that are declared with a pointer receiver using a value:
+```go
+func (u *user) changeEmail(email string) {
+    u.email = email
+}
+ryan := user{"Ryan", 38, "email@email.com"}
+ryan.changeEmail("new@email.com")
+```
+Go adjusts (dereferences) the pointer value to comply with the method's receiver. So, `sendEmail()` is operating against a copy of the value that `ryan` points to.
+
+### Reference types
+When you decalure a reference type, the value is a header value that contains a pointer to the underlying data structure. The header contains a pointer, so you can pass a copy of any reference type and share the underlying data structure.
+
+The following are reference types:
+- slice
+- map
+- channel
+- function types
+
+### Interfaces
+
+Interfaces are types that declare behavior. They are implemented by user-defined types through methods. If a type implements an interface with a method, then a value of that user defined type can be assigned to values of the interface type.
+
+Go uses implicit interfaces, which means that you do not have to declare that the method implements the interface, you just need to use the contract.
+
+When you call a method that accepts an interface value, Go looks at the method set for the user-defined type and tries to find a method that implements the interface. The user-defined type is called the 'concrete type' because it provides the interface concrete behavior. For example:
+
+```go 
+// io.Reader interface
+type Reader interface {
+    Read(b []byte) (n int, err error)
+}
+
+// Stringer interface. `Stringer` is the name of the interface, and its signature is within the curly brackets. 
+type Stringer interface {
+    String() string
+}
+```
+You can implement the `io.Reader` interface for a user-defined type if the function is:
+- named `Read`
+- accepts a slice of bytes ([]byte is a nil slice)
+- returns an integer and an error
+
+You can implement the `Stringer` interface if the function is:
+- named `Stringer`
+- returns a string
+
+
+Interface values are two-word data structures:
+1. A pointer to an internal table called iTable. iTable contains information about the user-defined stored value that implements the interface: the value's type and its list of methods.
+2. A pointer to the actual stored value.
+
+So, if you have a user that implements the `Stringer` interface:
+
+```go
+// user type
+type user struct {
+    name    string
+    age     int64
+    email   string
+}
+
+
+// user-defined interface 
+type birthdater interface {
+    birthday()
+}
+
+// user implements the Stringer interface
+func (u user) String() string {
+    return fmt.Sprintf("My name is %s", u.name)
+}
+
+// method with ptr receiver to update the user's email
+func (u *user) updateEmail(newEmail string) {
+    u.email = newEmail
+}
+
+// implement the birthdater interface
+func (u *user) birthday() {
+    u.age++
+}
+
+// user struct literal without field names
+ryan := user{"Ryan", 38, "email@email.com"}
+```
+The Stringer iTable contains information about the user type, which includes its list of methods. It also contains a pointer to the memory address that stores the actual user value. You cannot swap value and pointer receiver semantics with interface implementation.
+
+If you implement an interface using a pointer receiver, then only pointers of that type implement the interface:
+
+```go
+
+// user type
+type user struct {
+    name        string
+    password    string
+}
+
+// superuser type
+type superuser struct {
+    person      user
+    password    string
+}
+
+// user-defined interface 
+type passUpdater interface {
+    updatePassword(p string)
+}
+
+// user
+
+```
+
+
+## Arrays
+
+### Internals
+
+An array in Go is a fixed-length data type that contains a contiguous block of elements of the same type
+
+Having memory in a contiguous form can help to keep the memory you use stay loaded within CPU caches longer
+Since each element is of the same type and follows each other sequentially, moving through the array is consistent and fast
+
+An array is declared by specifying the type of data to be stored and the total number of elements required, also known as the array’s length.
+The type of an array variable includes both the length and the type of data that can be stored in each element
+
+When you pass variables between functions, they’re always passed by value. When your variable is an array, this means the entire array, regardless of its size, is copied and passed to the function.
+You can pass a pointer to the array and only copy eight bytes, instead of eight megabytes of memory on the stack
+You just need to be aware that because you’re now using a pointer, changing the value that the pointer points to will change the memory being shared
+
+Once an array is declared, neither the type of data being stored nor its length can be changed
+they’re always initialized to their zero value for their respective type
+
+An array is a value in Go. This means you can use it in an assignment operation
+```go
+var array1 [5]string
+array2 := [5]string{"Red", "Blue", "Green", "Yellow", "Pink"}
+array1 = array2
+```
 
 ```go
 var array [5]int                        // standard declaration
@@ -230,7 +470,113 @@ func fName(slice []int) []int {
 }
 ```
 
-### Maps
+## Maps
+
+A map provides you with an unordered collection of key/value pairs. maps are unordered collections, and there’s no way to predict the order in which the key/value pairs will be returned because a map is implemented using a hash table
+The map’s hash table contains a collection of buckets. When you’re storing, removing, or looking up a key/value pair, everything starts with selecting a bucket. This is performed by passing the key—specified in your map operation—to the map’s hash function. The purpose of the hash function is to generate an index that evenly distributes key/value pairs across all available buckets.
+
+The strength of a map is its ability to retrieve data quickly based on the key. They do not have a capacity or a restriction on growth.
+Use len() to get the length of the map
+The map key can be a value from any built-in or struct type as long as the value can be used in an expression with the == operator. You CANNOT use:
+- slices
+- functions
+- struct types that contain slices
+
+### Creating and initializing
+
+To create a map, use `make` or a map literal. The map literal is idiomatic:
+
+```go
+// create with make
+dict := make(map[string]int)
+
+// create and initialize as a literal IDIOTMATIC
+dict := map[string]string{"Red": "#da1337", "Orange": "#e95a22"}
+
+// slice as the value
+dict := map[int]string{}
+
+// assigning values with a map literal
+colors := map[string]string{}
+colors["Red"] = "#da137"
+
+// DO NOT create nil maps, they result in a compile error
+var colors map[string]string{}
+
+```
+### Testing if values exist in a map
+
+Test with the following 2 options:
+1. You can retrieve the value and a flag that explicitly lets you know if the key exists:
+```go
+value, exists := colors["Blue"]
+
+if exists {
+    fmt.Println(value)
+}
+```
+2. Return the value and test for the zero value to determine if the key exists:
+```go
+value, exists := colors["Blue"]
+
+if value != "" {
+    fmt.Println(value)
+}
+```
+
+### Iterating over maps with the for range loop
+
+This works the same as slices, except index/value -> key/value:
+
+```go
+// Create a map of colors and color hex codes.
+colors := map[string]string{
+    "AliceBlue":   "#f0f8ff",
+    "Coral":       "#ff7F50",
+    "DarkGray":    "#a9a9a9",
+    "ForestGreen": "#228b22",
+}
+
+// Display all the colors in the map.
+for key, value := range colors {
+    fmt.Printf("Key: %s  Value: %s\n", key, value)
+}
+```
+
+Use the built-in function `delete` to remove a value from the map:
+
+```go
+delete(colors, "Coral")
+```
+
+### Passing maps to functions
+
+Functions do not make copies of the map. Any changes made to the map by the function are reflected by all references to the map:
+
+```go
+func main() {
+    // Create a map of colors and color hex codes.
+    colors := map[string]string{
+       "AliceBlue":   "#f0f8ff",
+       "Coral":       "#ff7F50",
+       "DarkGray":    "#a9a9a9",
+       "ForestGreen": "#228b22",
+    }
+
+    // Call the function to remove the specified key.
+    removeColor(colors, "Coral")
+
+    // Display all the colors in the map.
+    for key, value := range colors {
+        fmt.Printf("Key: %s  Value: %s\n", key, value)
+    }
+}
+
+// removeColor removes keys from the specified map.
+func removeColor(colors map[string]string, key string) {
+    delete(colors, key)
+}
+```
 
 ```go
 // create with make
