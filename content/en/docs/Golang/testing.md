@@ -96,12 +96,6 @@ for name, tc := range tt {
 }
 ```
 
-## Testing dependencies
-
-### Stubs
-### Mocks
-### Fakes
-
 ## Unit tests 
 
 Unit tests test simple pieces of code, such as functions or methods.
@@ -218,6 +212,18 @@ func TestTempDir(t *testing.T)  {
 }
 ```
 
+## Integration tests
+
+Integration tests test how the program behaves when interacted with from the outside world--how a user uses it. This means that you test the `main()` method.
+
+In Go, you test the main method with the `TestMain()` function so you can set up and tear down resources more easily. For example, you might need to create a temporary file or build and execute a binary. You do not want to keep these artifacts in the program after testing.
+
+Follow these general guidelines when running integration tests:
+1. Check the machine with `runtime.GOOS`
+2. Create the build command with `exec.Command()`, then use `.Run()` to execute that command. Check for errors
+3. Run the tests with `m.Run()`
+4. Clean up any artifacts with `os.Remove(artifactname)`
+
 ## Coverage tests 
 
 Go can generate a test report that details what code is sufficiently tested.
@@ -280,26 +286,6 @@ func FuzzHelloWorld(f *testing.F)  {
 }
 ```
 
-## Integration tests
-
-Integration tests test how the program behaves when interacted with from the outside world--how a user uses it. This means that you test the `main()` method.
-
-In Go, you test the main method with the `TestMain()` function so you can set up and tear down resources more easily. For example, you might need to create a temporary file or build and execute a binary. You do not want to keep these artifacts in the program after testing.
-
-Follow these general guidelines when running integration tests:
-1. Check the machine with `runtime.GOOS`
-2. Create the build command with `exec.Command()`, then use `.Run()` to execute that command. Check for errors
-3. Run the tests with `m.Run()`
-4. Clean up any artifacts with `os.Remove(artifactname)`
-
-
-## Utilities
-
-Create a temporary file if you need to test an action like deleting a file from the file system. Use `os.CreateTemp()`. Be sure to clean up with `os.Remove(tempfile.Name())`:
-
-```go
-os.CreateTemp(".", )
-```
 
 ## Error handling and logging
 
@@ -316,6 +302,11 @@ The testing package provides methods troubleshoot during testing. The most usefu
 | `t.Fatal()`      | Combination of `Log()` and `FailNow()`. |
 | `t.Fatalf()`     | Combination of `Logf()` and `FailNow()`. |
 
+## Testing dependencies
+
+### Stubs
+### Mocks
+### Fakes
 
 ## Strategies
 
