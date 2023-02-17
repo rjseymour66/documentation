@@ -96,6 +96,39 @@ for name, tc := range tt {
 }
 ```
 
+## Test flags
+
+### shuffle
+
+Add the `-shuffle=on` flag to execute tests in a random order:
+
+```shell
+$ go test -v -shuffle=on
+```
+
+### failfast
+
+Stops tests in a single package if there is a failing test. This is helpful if you want to work on the first failing test:
+
+```go
+$ go test -v -failfast
+```
+### run
+
+Provide the name of a specific test that you want to run:
+
+```go
+// run TestName
+$ go test -v -run=TestName
+
+// run a specific subtest
+$ go test -v -run=TestName/^with_port
+
+// run a specific subtest
+$ go test -v -run=TestName/with_port
+```
+
+
 ## Unit tests 
 
 Unit tests test simple pieces of code, such as functions or methods.
@@ -129,6 +162,21 @@ func TestTable(t *testing.T) {
 }
 ```
 
+Alternatively, you can use a map with an anonymous struct:
+
+```go
+tt := map[string]struct {
+    rating int
+    price  float64
+}{
+    "prod one":   {5, 20},
+    "prod two":   {10, 30},
+    "prod three": {15, 40},
+}
+
+for _, tt := ...
+```
+
 Reuse assertion logic and naming makes each test identifiable.
 `t.Run()` defines a subtest. It accepts the name of the test, and then a testing function:
 ```go
@@ -139,11 +187,28 @@ for _, tt := range testCases {
 }
 ```
 
+### Subtests 
+
+Use `t.Run()` to run subtests. Subtests run in isolation, so you can use `t.Fatal[f]()` and not stop test execution. In addition, you can run subtests [in parallel](#parallel-testing).
+
+```go
+for name, tc := range tt {
+	t.Run(name, func(t *testing.T) {
+        ...
+		// assert
+		if got != tc.expected {
+			t.Errorf("expected %d, got %d", tc.expected, got)
+		}
+	})
+}
+```
+
 ### Parallel testing 
 
 Tests that have `t.Parallel()` on the first line of the `t.Run()` function.
 
 Go pauses all tests with `t.Parallel()` and then runs them when other tests complete. `GOMAXPROCS` determines how many tests run in parallel. By default, `GOMAXPROCS` is set to the number of CPUs on the machine.
+
 
 
 ### Skipping tests 
