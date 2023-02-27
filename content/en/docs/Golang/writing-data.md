@@ -1,6 +1,6 @@
 ---
 title: "Writing data"
-weight: 6
+weight: 60
 description: >
   Working with files in golang.
 ---

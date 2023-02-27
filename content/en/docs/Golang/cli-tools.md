@@ -1,11 +1,11 @@
 ---
 title: "CLI tools"
-weight: 8
+weight: 80
 description: >
   Working with CLI tools in Go.
 ---
 
-### Flags
+## Flags
 
 `flag.<FunctionName>` lets you define CLI flags. For example, to create a flag that performs an action if the flag is provided, you can use `flag.Bool`.
 

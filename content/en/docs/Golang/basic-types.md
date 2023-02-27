@@ -1,6 +1,6 @@
 ---
 title: "Basic types"
-weight: 7
+weight: 70
 description: >
   Working with basic types in Go.
 ---

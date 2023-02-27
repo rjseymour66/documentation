@@ -1,6 +1,6 @@
 ---
 title: "Databases"
-weight: 12
+weight: 120
 description: >
   Working with Databases in Go.
 ---

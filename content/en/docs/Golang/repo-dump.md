@@ -1,6 +1,6 @@
 ---
 title: "Repo dump"
-weight: 30
+weight: 300
 description: >
   Repo dump that needs reorg.
 ---
@@ -95,6 +95,8 @@ if os.Getenv("ENV_VAR_NAME") != "" {
 
 
 ### Interfaces
+
+An interface should have one or few methods, and each method should model behavior.
 
 When possible, use interfaces as function arguments instead of concrete types to increase flexibility.
 

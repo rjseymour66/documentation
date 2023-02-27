@@ -1,6 +1,6 @@
 ---
 title: "Errors"
-weight: 3
+weight: 30
 description: >
   How to handle, create, and use errors.
 ---

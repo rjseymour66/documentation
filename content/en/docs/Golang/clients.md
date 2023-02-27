@@ -1,6 +1,6 @@
 ---
 title: "Clients"
-weight: 11
+weight: 110
 description: >
   Working with Clients in Go.
 ---

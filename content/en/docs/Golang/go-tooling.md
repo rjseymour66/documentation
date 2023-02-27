@@ -1,6 +1,6 @@
 ---
 title: "Go tooling"
-weight: 2
+weight: 20
 description: >
   Go tooling and tips.
 ---

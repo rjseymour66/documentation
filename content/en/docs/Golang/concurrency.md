@@ -1,9 +1,84 @@
 ---
 title: "Concurrency"
-weight: 14
+weight: 140
 description: >
-  Working with Concurrency in Go.
+  Channels, Goroutines, Scheduling, and Synchronization.
 ---
+
+Concurrency is about _dealing with_ a lot of things at once. Parallelism is about _doing_ a lot of things at once. When you think of concurrency, think of resources that are in a waiting state--waiting for a process to act upon the resource.
+
+## Goroutines
+
+Most programming languages achieve concurrency with kernel-space processes. Go uses _goroutines_, which are a lightweight thread of execution spawned from a user-space thread. These threads have their own call stack and are managed by the Go runtime scheduler. The scheduler distributes the goroutines over multiple operating system threads that run on one or more processors.
+
+To create a goroutine, use the `go` keyword before any named or anonymous function:
+
+```go
+func main() {
+	go PrintNum(5)
+}
+
+// PrintNum logs to the console each number from 1 to n.
+func PrintNum(n int) {
+	for i := 0; i < n; i++ {
+		fmt.Println(i)
+	}
+}
+```
+In the previous example, nothing logs to the console. Because goroutines run independently of the `main` method, `main` does not wait for the scheduler to run the goroutine, so it exits before `PrintNum` executes.
+
+## Channels
+
+Channels are a typed conduit that allow communication between goroutines. They have the following characteristics:
+- Typed, and can send and receive values of that type only.
+- Synchronous--the sender must wait for the receiver to finish before sending more data, and vice versa.
+- Values are ordered with FIFO.
+- [Buffered or unbuffered](#buffered-and-unbuffered-channels).
+- They are directional. Channels can be bidirectional or unidirectional. Prefer unidirectional to prevent bugs and complexity.
+
+### Creating channels
+
+Create a channel with `make`:
+
+```go
+// chanName := make(chan Type)
+intChan := make(chan int)
+```
+### Sending and receiving
+
+Use the `<-` operator to indicate when a channel is sending or receiving. When the `<-` operator is to the left of the channel, data is leaving the channel and is being received by a variable or the environment. When the `<-` operator is to the right of the channel (points to the channel), data is going into the channel, so you are sending data into the channel:
+```go
+// send 5 into the channel
+ch <- 5
+// receive from the channel and assign to val
+val := <- ch
+```
+The channel that blocks (waits) is the channel that is waiting on the other side to be ready. So if `a` is sending data to `b`, but `b` is full, then `a` blocks until `b` is ready to receive.
+
+### Buffered and unbuffered channels
+
+Unbuffered channels 
+When a goroutine sends a value to an unbuffered channel, that go routine blocks (waits) until the value is received from that channel.
+
+Buffered channels have a limited capacity. If a buffered channel is full, the sender blocks until the buffered channel is ready to receive the value. If the buffered channel is empty, the buffered channel blocks until it receives a value.
+
+In the following example, the buffered `iChan` channel receives the `5` value from the `main` method. This means that the 
+
+
+
+
+```go
+// Use an empty struct to create a channel for done. done channels
+// only signal that processing is complete, and an empty struct does not allocate
+// any memory
+done := make(chan struct{})
+```
+
+
+
+
+## Beginning other book
+
 
 Go provides two strategies that maintain data integrity when you are writing concurrent programs:
 - Locks, such as Mutex
@@ -13,18 +88,6 @@ Go provides two strategies that maintain data integrity when you are writing con
 
 `RLock()` blocks and waits if the associated object is locked for writing. This provides safe concurrent read and write operations while allowing multiple reads to improve performance.
 
-## Channels
-
-Channels allow goroutines to communicate with each other.
-
-```go
-// create a channel with make
-ch := make(chan type)
-// Use an empty struct to create a channel for done. done channels
-// only signal that processing is complete, and an empty struct does not allocate
-// any memory
-done := make(chan struct{})
-```
 
 ## WaitGroups
 
@@ -45,7 +108,7 @@ Use `runtime.NumCPU()` to determine the number of available CPUs:
 
 ## Goroutines
 
-Goroutines are usually anonymous functions that follow the keyword `go`, so that they run independently of the `main()` function. Because they run independently of the `main()` function, go uses `WaitGroups`, a mechanism that blocks the `main()` method until all goroutines complete.
+Because goroutines run independently of the `main()` function, go uses `WaitGroups`, a mechanism that blocks the `main()` method until all goroutines complete.
 
 The following worker queue example reads numbers from a file, and converts them from type string to float64. The containing function has this signature:
 

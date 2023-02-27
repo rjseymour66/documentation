@@ -1,6 +1,6 @@
 ---
 title: "Reading data"
-weight: 5
+weight: 50
 description: >
   Working with files in golang.
 ---

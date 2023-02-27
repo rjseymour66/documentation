@@ -1,6 +1,6 @@
 ---
 title: "Observability"
-weight: 10
+weight: 100
 description: >
   Working with observability in Go.
 ---
