@@ -9,29 +9,7 @@ Concurrency is about _dealing with_ a lot of things at once. Parallelism is abou
 
 Go uses a _fork-join_ concurrency model. At any point during execution, the program can split off a child branch of execution that runs concurrently with its parent. At some point in the future, the parent and child threads synchronize and join back together. These join points are what guarantee the program's correctness and remove race conditions.
 
-## Goroutines
-
-Most programming languages achieve concurrency with kernel-space processes. Go uses _goroutines_, which are a lightweight thread of execution spawned from a user-space thread. Goroutines run concurrently alongside other code. They have their own call stack that is a few kilobytes, which is managed by the Go runtime scheduler. The scheduler distributes the goroutines over multiple operating system threads that run on one or more processors.
-
-Specifically, goroutines are _coroutines_: concurrent subroutines--functions, closures, or methods--that cannot be interrupted (preemptive). Their behavior is managed by the Go runtime. The runtime observes the goroutine runtime and suspends them automatically whtn they block and then resumes them when they unblock.
-
-Every program has at least one goroutine: the main goroutine (`main` method). To create a goroutine, use the `go` keyword before any named or anonymous function:
-
-```go
-func main() {
-	go PrintNum(5)
-}
-
-// PrintNum logs to the console each number from 1 to n.
-func PrintNum(n int) {
-	for i := 0; i < n; i++ {
-		fmt.Println(i)
-	}
-}
-```
-In the previous example, nothing logs to the console. Because goroutines run independently of the `main` method, `main` does not wait for the scheduler to run the goroutine, so it exits before `PrintNum` executes.
-
-To synchronize the main goroutine and its child goroutines, you must use concurrency primitives. Go provides traditional, low-level concurrency primitives in the [sync package](#sync-package), and higher-level primitives with [channels]().
+To synchronize the main goroutine and its child goroutines, you must use concurrency primitives. Go provides traditional, low-level concurrency primitives in the [sync package](#sync-package), and higher-level primitives with [channels](#channels).
 
 ## sync package
 
@@ -41,12 +19,12 @@ Use a `Waitgroup` if you are not concerned about the following:
 - Result of the concurrent operation.
 - You can collect the result of the concurrent operation with other means.
 
-A `WaitGroup` is a concurrent-safe counter. You can add goroutines to the `WaitGroup`, remove goroutines, and then wait for all goroutines that the `WaitGroup` tracks to complete. `WaitGroup` has the following methods to track goroutines:
-- `<x>.Add(n)`: increments the number of goroutines that the `WaitGroup` tracks by `n`.
-- `defer <x>.Done()`: decrements the number of goroutines that the `WaitGroup` tracks by 1.
-- `<x>.Wait()`: Blocks program execution until the counter reaches zero.
+A `WaitGroup` is a concurrent-safe counter. You can add goroutines to the `WaitGroup`, remove goroutines, and then wait for all goroutines that the `WaitGroup` tracks to complete. For example, a `WaitGroup` named `wg` has the following methods to track goroutines:
+- `wg.Add(n)`: increments the number of goroutines that the `WaitGroup` tracks by `n`.
+- `defer wg.Done()`: decrements the number of goroutines that the `WaitGroup` tracks by 1.
+- `wg.Wait()`: Blocks program execution until the counter reaches zero.
 
-For example, the following `WaitGroup` `wg` demonstrates all of these methods:
+The following example demonstrates these methods:
 ```go
 func main() {
 
@@ -83,7 +61,7 @@ All goroutines are done running...
 
 Because the `.Add` method registers a goroutine with a WaitGroup, you cannot call it within a goroutine. If you called `.Add` in a goroutine, then the program might not register it because it might reach the `Wait` method first. The `Wait` method cannot block for a goroutine that has not yet started. You can place `Done` in the goroutine function becuase the program does not reach `Done` until it launches the goroutine.
 
-## Mutex
+### Mutex
 
 _Mutex_ stands for "mutual exclusion", and it is a way mechanism that handles concurrency through memory access synchronization. A mutex provies a concurrent-safe way to provide exclusive access to shared resources. The developer must coordinate memory access with a mutex.
 
@@ -94,15 +72,38 @@ A mutex handles memory synchronization with the `Lock()` and `Unlock()` methods.
 ```
 Critical sections indicate a bottleneck--it is expensive to enter and exit a critical section. One strategy to mitigate the memory sharing is to use a `sync.RWMutex`. The `sync.RWMutex` gives you more control over the memory. It can request a lock for reading, unless the lock is being held for writing. An arbitrary number of readers can hold a reader lock as long as nothing else is holding a writer lock.
 
+The [Locker interface](https://pkg.go.dev/sync@go1.19.4#Locker) has `Lock` and `Unlock` methods, so any mutex satisfies it:
+
 ```go
-// sync.Locker is an interface with a Lock and Unlock method, so
-// any mutex satisfies it.
 l sync.Locker
 
 var m sync.RWMutex
 m.RLocker()
 
 ```
+The [Locker interface](https://pkg.go.dev/sync@go1.19.4#Locker) has methods that lock and unlock an object.
+
+## Goroutines
+
+Most programming languages achieve concurrency with kernel-space processes. Go uses _goroutines_, which are a lightweight thread of execution spawned from a user-space thread. Goroutines run concurrently alongside other code. They have their own call stack that is a few kilobytes, which is managed by the Go runtime scheduler. The scheduler distributes the goroutines over multiple operating system threads that run on one or more processors.
+
+Specifically, goroutines are _coroutines_: concurrent subroutines--functions, closures, or methods--that cannot be interrupted (preemptive). Their behavior is managed by the Go runtime. The runtime observes the goroutine runtime and suspends them automatically whtn they block and then resumes them when they unblock.
+
+Every program has at least one goroutine: the main goroutine (`main` method). To create a goroutine, use the `go` keyword before any named or anonymous function:
+
+```go
+func main() {
+	go PrintNum(5)
+}
+
+// PrintNum logs to the console each number from 1 to n.
+func PrintNum(n int) {
+	for i := 0; i < n; i++ {
+		fmt.Println(i)
+	}
+}
+```
+In the previous example, nothing logs to the console. Because goroutines run independently of the `main` method, `main` does not wait for the scheduler to run the goroutine, so it exits before `PrintNum` executes.
 
 
 ## Channels
@@ -126,15 +127,15 @@ chStream = make(chan any)
 
 ### Sending and receiving
 
-There are bidirectional (send _and_ receive) and unidirectional (send _or_ receive) channels. Most channels are bidirectional--Go can implicitly convert a bidirectional channel to unidirectional when needed. It is common to see a unidirectional channel as a function parameter or return type. The placement of the `<-` operator determines whether the channel sends or receives information.
+There are bidirectional (send _and_ receive) and unidirectional (send _or_ receive) channels. Most channels are bidirectional--Go can implicitly convert a bidirectional channel to unidirectional. It is common to see a unidirectional channel as a function parameter or return type. The placement of the `<-` operator determines whether the channel sends or receives information.
 
-When the `<-` operator is to the left of the channel name, it is a receiving channel. The program reads or receives information from a read channel. You cannot send data into a receiving channel, you can only read from it:
+When the `<-` operator is to the left of the channel name, it is a receiving (read) channel. The program reads or receives information from a read channel. You cannot send data into a receiving channel, you can only read from it:
 ```go
 var recChan <-chan any
 recChan = make(<-chan any)
 ```
 
-When the `<-` operator is to the right of the channel name, it is a sending channel. The program sends information to a send channel:
+When the `<-` operator is to the right of the channel name, it is a sending (write) channel. The program writes information to a send channel:
 ```go
 var sendChan chan<- any
 sendChan = make(chan<- any)
@@ -165,9 +166,9 @@ Output:
 $ go run main.go 
 It's a string!
 ```
-### Blocking channels
+### Unbuffered channels
 
-When you run goroutines with lower-level primitives from the sync package, you have to register them to a [WaitGroup](#waitgroups) to ensure that they run before the main method exits. You do not have to register goroutines with channels because they synchronize with the Go runtime to ensure they run to completion.
+When you run goroutines with lower-level primitives from the sync package, you have to register them to a [WaitGroup](#waitgroups) to ensure that they run before the main method exits. You do not have to register goroutines with some channels because they synchronize with the Go runtime to ensure they run to completion.
 
 By default, channels are _unbuffered_--they do not have defined capacity. When you send data into an unbuffered channel, the Go runtime blocks until there is a channel on another goroutine that can receive the data. A buffered send channel (`ch <-`) accepts data only if there is a corresponding receive channel (`<-ch`) ready. 
 
@@ -199,6 +200,45 @@ $ go run main.go
 Channel information!
 ```
 Any goroutine that attempts to write to a channel that is full blocks until the channel is emptied (read from). Any goroutine that attempts to read from a channel that is empty waits until at least one item is placed on it.
+
+### Buffered channels
+
+A _buffered channel_ is a channel with a capacity at instantiation. If no reads are performed on the channel, a goroutine can write _capacity_ number of times to the channel.
+
+Instantiate a buffered channel just as you do an unbuffered channel, but provide a capacity as the last argument:
+
+```go
+bufChannel := make(chan int, 3)
+```
+
+Buffered channels use the first-in-first-out (FIFO) method. For example:
+
+```go
+func main() {
+
+	bufChan := make(chan int, 4)
+	bufChan <- 0
+	bufChan <- 1
+	bufChan <- 2
+	bufChan <- 3
+	bufChan <- 4
+	close(bufChan)
+
+	for i := range bufChan {
+		fmt.Printf("%v\n", i)
+	}
+}
+```
+
+Output: 
+```shell
+$ go run main.go 
+0
+1
+2
+3
+4
+```
 
 ### Closing channels
 
@@ -243,15 +283,157 @@ Output:
 $ go run main.go 
 (false): 0
 ```
+#### Unblocking multiple goroutines
+
+Because you can read from a closed channel an infinite number of times, you can unblock multiple goroutines at once by closing a channel. In the following example, a `for loop` adds a single goroutine to a `WaitGroup` for 5 iterations. Each goroutine has a single read channel:
+
+```go
+func main() {
+	begin := make(chan any)
+	var wg sync.WaitGroup
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-begin
+			fmt.Printf("%v has begun\n", i)
+		}(i)
+	}
+
+	fmt.Println("Unblocking goroutines...")
+	close(begin)
+	wg.Wait()
+}
+```
+
+Remember, a read channel blocks until a write channel sends a value to the channel. When each goroutine reaches the `close(begin)` statement, it unblocks and closes the channel.
+
+### Ranging over a channel
+
+You can `range` over channels just like you can `range` over collection types. Unlike other collection types, the channel `for range` expression returns only one value. The `range` keyword breaks the loop when the channel is closed.
+
+In the following example, the anonymous goroutine writes data into `valStream` and then closes the channel. The `range` iteration reads from the stream until the channel is closed:
+
+```go
+func main() {
+	valStream := make(chan int)
+	go func() {
+		defer close(valStream)
+		for i := 0; i < 5; i++ {
+			valStream <- i
+		}
+	}()
+
+	for val := range valStream {
+		fmt.Printf("%v", val)
+	}
+}
+```
+In the previous example, the anonymous goroutine writes a single value to `valStream`, and then blocks until the `for range` expression reads from the value. This continues until the `for` loops ends and `defer close(valStream)` executes, at which point the `for range` loop breaks because the channel is closed.
 
 
+### Structuring channel communication
 
+The default value for a channel is `nil`. Reading from or writing to a `nil` channel might result in panics, so you should properly assign channel responsibilities to facilitate communication.
 
+Channel _ownership_ belongs to a goroutine that does the following:
+- Instantiates the channel
+- Writes to the channel or passes ownership to another goroutine.
+- Closes the channel.
 
+Channel utilizers read from the channels--they are concerned with blocking and closed channels. A channel owner function often returns a read channel. For example:
 
+```go
+func main() {
 
+	resultChan := chanOwner()           // passes ownership
 
-# Beginning other book
+	for result := range resultChan {    // read until closed
+		fmt.Printf("Received: %d\n", result)
+	}
+	fmt.Println("Done receiving.")
+}
+
+func chanOwner() <-chan int {           
+	resultChan := make(chan int, 9)     // instantiates the channel
+	go func() {
+		defer close(resultChan)         // closes the channel
+		for i := 0; i <= 9; i++ {
+			resultChan <- i             // writes to the channel
+		}
+	}()
+	return resultChan                   // returns a read channel
+}
+```
+
+## Select statement
+
+The `select` statement is how Go programs compose channels together to create larger abstractions. It is structured like a `switch` statement, but each `select` block is tested simultaenously to see if any of them are ready to complete the task. If none are ready, the entire statement blocks.
+
+The following example demonstrates how each available `select case` is tested simultaneously:
+
+```go
+func main() {
+
+	ch1 := make(chan any)
+	close(ch1)
+	ch2 := make(chan any)
+	close(ch2)
+
+	var ch1Count, ch2Count int
+	for i := 1000; i >= 0; i-- {
+		select {
+		case <-ch1:
+			ch1Count++
+		case <-ch2:
+			ch2Count++
+		}
+	}
+	fmt.Printf("ch1Count: %d\nch2Count: %d\n", ch1Count, ch2Count)
+}
+```
+Output: 
+
+```shell
+$ go run main.go 
+ch1Count: 524
+ch2Count: 477
+
+$ go run main.go 
+ch1Count: 498
+ch2Count: 503
+
+$ go run main.go 
+ch1Count: 505
+ch2Count: 496
+
+```
+
+To prevent a `select` statement from blocking forever, you can add a `case` that uses the Go `time` package:
+
+```go
+func main() {
+
+	var c <-chan any
+	select {
+	case <-c:
+		fmt.Printf("%v", <-c)
+	case <-time.After(1 * time.Second):
+		fmt.Println("Timed out")
+	}
+}
+```
+Output:
+
+```shell
+$ go run main.go 
+Timed out
+```
+
+### default case TODO
+
+The `select` statement has a `default` case that can perform work when all the other channels are blocking. 
+
 
 ```go
 // Use an empty struct to create a channel for done. done channels
@@ -260,22 +442,6 @@ $ go run main.go
 done := make(chan struct{})
 ```
 
-Go provides two strategies that maintain data integrity when you are writing concurrent programs:
-- Locks, such as Mutex
-- goroutines and channels
-
-## Mutexes
-
-`RLock()` blocks and waits if the associated object is locked for writing. This provides safe concurrent read and write operations while allowing multiple reads to improve performance.
-
-
-## WaitGroups
-
-A WaitGroup is a mechanism that coordinates the goroutine execution. When you create a goroutine, add 1 to the WaitGroup. When a goroutine finishes, subtract 1 from the WaitGroup. Use `Wait()` to wait until all goroutines are finished so you can complete execution.
-
-```go
-wg := sync.WaitGroup{}
-```
 
 ## Scheduling contention and worker queues
 
@@ -286,7 +452,7 @@ When using worker queues, you create one goroutine per available CPU, and have a
 Use `runtime.NumCPU()` to determine the number of available CPUs:
 
 
-## Goroutines
+## Worker queues
 
 Because goroutines run independently of the `main()` function, go uses `WaitGroups`, a mechanism that blocks the `main()` method until all goroutines complete.
 
@@ -396,13 +562,4 @@ The select statement is similar to a switch statement. It blocks execution of th
 			return err
 		}
 	}
-```
-
-## Locks
-
-The [Locker interface](https://pkg.go.dev/sync@go1.19.4#Locker) has methods that lock and unlock an object. Use this when you want to prevent concurrent access to an object during operations.
-
-`&sync.Mutex` implements the Locker interface:
-```go
-mu := &sync.Mutex{}
 ```
