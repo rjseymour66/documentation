@@ -1,7 +1,7 @@
 ---
 title: "SQL"
 linkTitle: "SQL"
-weight: 1
+weight: 15
 description: >
   How to write SQL queries. This topic uses MySQL.
 ---

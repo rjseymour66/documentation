@@ -1,7 +1,7 @@
 ---
 title: "Golang"
 linkTitle: "Golang"
-weight: 1
+weight: 2
 description: >
   How to use golang
 ---
