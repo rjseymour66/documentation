@@ -1,8 +1,8 @@
 ---
-title: "Basic types"
-weight: 70
+title: "Types and collections"
+weight: 4
 description: >
-  Working with basic types in Go.
+  Working with basic types and collections in Go.
 ---
 
 ## Type system

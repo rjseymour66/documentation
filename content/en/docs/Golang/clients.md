@@ -1,6 +1,6 @@
 ---
 title: "Clients"
-weight: 110
+weight: 6
 description: >
   Working with Clients in Go.
 ---
@@ -31,7 +31,7 @@ You have to model responses with structs. Create a struct to model an individual
 
 Create a generic method that can send any type of request and handle any response code. The `.Do()` method can send any type of request (GET, POST, PUT, DELETE, etc.).
 
-A reqeust should perform the following:
+A request should perform the following:
 - Create a request object with [.NewRequest(method, url string, body io.Reader)](https://pkg.go.dev/net/http#NewRequest)
 - Set any content headers with [Header.Set(header-name, value)](https://pkg.go.dev/net/http#Header.Set)
 - Execute the request with the .Do() method. Save the response in a var

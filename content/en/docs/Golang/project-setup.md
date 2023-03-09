@@ -1,6 +1,6 @@
 ---
 title: "Project setup"
-weight: 10
+weight: 1
 description: >
   Setting up a Go project.
 ---
