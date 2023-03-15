@@ -1,6 +1,6 @@
 ---
 title: "Project setup"
-weight: 1
+weight: 10
 description: >
   Setting up a Go project.
 ---
@@ -34,6 +34,23 @@ Build your application:
 build:
     go build -o appname path/to/main.go
 ```
+
+### Cross-compilation
+
+You need to know the `GOOS` and `GOOARCH` values to compile the correct binaries.
+
+Next, you can cross compile for multiple operating systems with a Makefile. Create a make target that compiles multiple binaries and places them in the `/bin` directory:
+
+```makefile
+compile:
+	# Linux
+	GOOS=linux GOARCH=amd64 go build -o ./bin/hit_linux_amd64 ./cmd/hit
+	# macOS
+	GOOS=darwin GOARCH=amd64 go build -o ./bin/hit_darwin_amd64 ./cmd/hit
+	# windows
+	GOOS=windows GOARCH=amd64 go build -o ./bin/hit_win_amd64.exe ./cmd/hit
+```
+> Make sure that you add the `/bin` directory to the `.gitignore` file.
 
 ### Test
 
@@ -107,12 +124,44 @@ The preceding command creates a `go.mod` file in the top-level of your project t
 
 ## Packages
 
-Packages are directories in a go project. The name of the directory is the package name. For example, source files in the `go-src/stocks/` package are in the `stocks` package. At the top of the file, declare package names with `package <package-name>`, and import packages with the `import <package-name>` statement.
+Packages are directories in a Go project. A package name should describe what it provides, not what it does. The name of the directory is the package name. For example, source files in the `go-src/stocks/` package are in the `stocks` package. At the top of the file, declare package names with `package <package-name>`, and import packages with the `import <package-name>` statement.
 > `import` statements use the fully-qualified package name. This begins with the module name containing the package. For example, `import go-src/<package-name>`
 
 Prepend any imported package code with the package name, or an alias for the package: `alias package/name`. For example, `s go-src/stocks` allows you to prepend any code with `s.`, such as `s.Investment`.
 
 *main*: any program that has to run as an application must be in the `main` package.
+
+
+
+
+When you write external tests, use a `_test` suffix. For example, a package that contains external tests for the `url` package is `url_test`.
+
+### Import external packages
+
+When you import an external package, you list the module name in the `go.mod` file, followed by the path to the specific library from the project root. For example, if the `go.mod` file contains the following:
+
+```go 
+module url
+...
+```
+
+Then you import the module as follows:
+```go
+import "url/path/to/library"
+```
+
+Commonly, packages are publically available in repositories, and the module name is the path to the root of the repository:
+
+```go 
+module github.com/rjs/url-parser
+...
+```
+
+In this case, the import statement for the `parser` package within this repo is as follows:
+
+```go
+import "github.com/rjs/url-parser/parser"
+```
 
 
 
@@ -134,3 +183,23 @@ Prepend any imported package code with the package name, or an alias for the pac
 `/internal` directory is special because other projects cannot import anything  in this directory. This is a good place for domain code.
 If an entity needs to be accessible to all domain code, place its file in the `/internal` directory. Its package name is the project package.
 Each subdirectory in `/internal` is a domain.
+
+You create a tool that the user interacts with and is responsible for the following:
+- Parses the flags
+- Validates flags
+- Calls the business logic library
+
+Go uses the `cmd` directory for executables (the entry point) such as CLI tools. Within each `cmd/subdirectory`, you can name the entry point `main.go` or the name of the package, such as `hit.go`. Regardless of the file name, it must be in the `main` package because that package is what makes a file executable.
+
+Next, you have to create the tool library that contains the business logic. This is a standalone package, so use the name of the library that you are building.
+
+The following is a simple directory structure for the `hit` tool:
+
+```shell
+hit-tool
+├── cmd         # Executable directory
+│   └── hit     # CLI tool directory
+├── go.mod
+└── hit         # Library directory
+
+```

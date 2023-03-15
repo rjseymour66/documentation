@@ -1,6 +1,6 @@
 ---
 title: "Servers"
-weight: 7
+weight: 70
 description: >
   Working with Servers in Go.
 ---

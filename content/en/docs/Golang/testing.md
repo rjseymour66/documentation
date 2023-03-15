@@ -1,17 +1,38 @@
 ---
 title: "Testing"
-weight: 3
+weight: 30
 description: >
   Working with Testing in Go.
 ---
 
+Place both internal and external tests in the same folder as the code they test.
+- _Internal tests_ verify code from the same package. They are called 'white-box tests' and can test exported and unexported identifiers.
+- _External tests_ verify code from another package. They are called 'black-box tests'. External tests use the `_test` suffix in the package name. For example, `package url_test`.
+
 ## Package naming
 
-Place `*_test.go` files in the same directory as the code that you are testing. When you declare the `package` in the test file, use the original package name followed by `_test`. For example:
+Place `*_test.go` files in the same directory as the code that you are testing. For external (integration) tests, use the original package name followed by `_test`. For example:
 
 ```go
 package original_test
 ```
+This package format requires that you import the source into the test file.
+
+## Methods
+
+The most useful are `t.Errorf()` and `t.Fatalf()`. The following table describes all available `t.*` test methods:
+
+| Method          | Description |
+|-----------------|:------------|
+| `t.Log()`        | Log a message. |
+| `t.Logf()`       | Log a formatted message.|
+| `t.Fail()`       | Mark the test as failed, but continue test execution. |
+| `t.FailNow()`    | Mark the test as failed, and immediately stop execution. |
+| `t.Error()`      | Combination of `Log()` and `Fail()`. |
+| `t.Errorf()`     | Combination of `Logf()` and `Fail()`. |
+| `t.Fatal()`      | Combination of `Log()` and `FailNow()`. |
+| `t.Fatalf()`     | Combination of `Logf()` and `FailNow()`. |
+
 
 ## Write a test
 
@@ -131,7 +152,7 @@ $ go test -v -run=TestName/with_port
 
 ## Unit tests 
 
-Unit tests test simple pieces of code, such as functions or methods.
+In Go, a _unit_ is a package, and a _unit test_ verifies the behavior of a single package. Unit tests test simple pieces of code, such as functions or methods.
 
 ### Table-driven tests
 
@@ -232,7 +253,9 @@ $ go test -v -test.short
 
 ### Cleanup 
 
-Use `t.Cleanup()` to clean up testing resources. Do not use the standard `defer` functions:
+Use `t.Cleanup()` to clean up testing resources. The `Cleanup()` method is available to helper and testing methods, so it cancels after they are complete. The standard `defer` function operator executes a function before it completes, even if it is a helper function.
+
+The following is a simple example of a function that uses `Cleanup`:
 
 ```go
 func TestWithResources(t *testing.T)  {
@@ -289,14 +312,126 @@ Follow these general guidelines when running integration tests:
 3. Run the tests with `m.Run()`
 4. Clean up any artifacts with `os.Remove(artifactname)`
 
+## Testing the main method
+
+The `main` method uses globals, which you cannot easily test. The trick is to put the logic into the `run()` function. You can inject the globals to the `run` function, and you can mimic those values during tests.
+
+The flag package uses `NewFlagSet` function to create the default flag set, `CommandLine`.
+
+## Testable examples
+
+[Blog post](https://go.dev/blog/examples)
+
+A _testable example_ is live documentation for code. You write a testable example to demonstrate the package API to other developers. The API includes the exported identifiers, such as functions, methods, etc. A testable example never goes out of date.
+
+The testing package runs testable examples and checks their results, but it does not report successes or failures:
+
+```go
+func ExampleURL_fields() {
+	u, err := url.Parse("https://foo.com/go")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(u.Scheme)
+	fmt.Println(u.Host)
+	fmt.Println(u.Path)
+	fmt.Println(u)
+	// Output:
+	// https
+	// foo.com
+	// go
+	// https://foo.com/go
+}
+```
+
+### Naming conventions
+
+Testable examples use the following naming conventions:
+
+| Signature                    | Description |
+|:-----------------------------|:------------|
+| `func Example()`             | Example for the entire package. |
+| `func ExampleParse()`        | Example for the `Parse` function. |
+| `func ExampleURL()`          | Example for the `URL` type. |
+| `func ExampleURL_Hostname()` | Example for the `Hostname` method on the `URL` type. |
+
+
+### godoc server
+
+You can generate docs that include your [testable examples](#testable-examples) with `godoc`. The following command installs the latest version:
+
+```shell
+$ go install golang.org/x/tools/cmd/godoc@latest
+```
+
+To view any `ExampleXxx` functions as Go documentation, run the `go doc` server with the following command:
+```shell
+$ godoc -play -http ":6060"
+```
+To show additional examples of the same type, use the `_xxx()` suffix on the function name. For example:
+```go
+func ExampleURL(){...}
+func ExampleURL_fields(){...}
+```
+
+
+## Test unexported functions
+
+If you want to test an unexported function from an external test, you must export the function from the external test package. For example, the `parseScheme` function is unexported:
+
+```go
+// url.go
+package url
+
+func parseScheme() {...}
+```
+
+Create a new file in the same package that assigns the unexported function to an exported function:
+
+```go
+// export_test.go
+package url
+
+var ParseScheme = parseScheme
+```
+
+Finally, test the function in an external test file:
+
+```go
+// parse_scheme_test.go
+package url_test
+
+func TestParseScheme(t *testing.T) {...}
+```
+
 ## Coverage tests 
 
-Go can generate a test report that details what code is sufficiently tested.
-
-In its simplest form, you can display the percentage of tested code with the `cover` flag:
+Go can generate a test report that details what code is sufficiently tested. In its simplest form, you can display the percentage of tested code with the `cover` flag:
 
 ```shell 
 go test -cover
+```
+
+View how much of your code is covered by tests:
+```shell
+$ go test -coverprofile cover.out
+$ go test -coverprofile=coverage_output_filename
+```
+The coverage output file is optional. By convention, the coverage profile file is named `cover.out`.
+
+Use a coverage output file to view test coverage by function:
+```shell
+$ go tool cover -func=cover.out
+```
+
+After you create the `coverprofile` file, use the `cover` go tool to generate HTML output to view what code is and is not covered. This command opens the coverage output in the browser:
+```shell
+$ go tool cover -html=cover.out
+```
+
+To create the HTML file, but not open it in the browser automatically:
+```shell
+$ go tool cover -html=cover.out -o coverage.html
 ```
 
 By default, the testing package only tests packages with `*_test.go` files. To test all packages, use the `coverpkg` flag: 
@@ -305,34 +440,110 @@ By default, the testing package only tests packages with `*_test.go` files. To t
 $ go test ./... -coverpkg=./...
 ```
 
-Generate a coverage report file with the `coverprofile` flag and a custom filename:
 
-```shell 
-$ go test -coverprofile=coverage_output_filename
-```
+The cover tool uses three colors to identify code coverage:
+- grey: not tracked by the coverage tool
+- green: sufficiently tested
+- red: not covered by tests
 
-To format the coverage output, use `go tool` with `cover` and the `html` flag:
 
-```shell 
-$ go tool cover -html=html_coverage_output_filename
-```
 
 ## Benchmark tests 
 
-Benchmark tests measure code performance. These tests require the following: 
-- Test name must start with `BenchmarkXxx`
-- Accepts the `*testing.B` parameter
-- Must use a `for` loop with `b.N` as the upper bound
+Benchmark your methods to determine their efficiency. Benchmark functions use the `BenchmarkXxx(b *testing.B)` signature. Place them in the `x_test.go` file with the other test functions.
 
-`b.N` is adjusted at runtime. The test completes when the execution time of each iteration is statistically stable:
+To write a benchmark function, call the method that you want to benchmark within a `for` loop in the `BenchmarkXxx` function. The `for` loop uses `b.N` as its upper bound. `b.N` adjusts the test runner to properly measure performance at runtime. In addition, you can run the `b.ReportAllocs()` function to see how many memory allocations your code makes.
 
-```go 
-func BenchmarkHelloWorld(b *testing.B)  {
-    for i := 0; i < b.N; i++ {
-        HelloWorld(i)
+For example, the following function benchmarks the `String()` method on the `URL` type:
+
+```go
+func BenchmarkURLString(b *testing.B) {
+	b.ReportAllocs()
+	b.Logf("Loop %d times\n", b.N)
+
+	u := &URL{Scheme: "https", Host: "foo.com", Path: "go"}
+
+	for i := 0; i < b.N; i++ {
+		u.String()
+	}
+}
+```
+To run the test, use the `-bench` flag. Use a dot (`.`) to run every benchmark in the package:
+
+```shell
+$ go test -bench .
+...
+BenchmarkURLString-12    	 8868142	       153.8 ns/op	      64 B/op	       4 allocs/op
+--- BENCH: BenchmarkURLString-12
+    ...
+PASS
+ok  	url/url	1.506s
+```
+
+The `B/op` column indicates that there were 64 bytes allocated in each operation. The `allocs/op` value indicates the number of memory allocations that made by the code in the benchmark.
+
+When you run benchmarks with the `-bench` flag, the regular tests run as well (use the `-v` flag to verify). If you want to run only the benchmark tests, use the `-run` flag with the `^$` regular expression:
+
+```shell
+$ go test -run=^$ -bench .
+```
+
+The `^$` regex tells the runner to ignore tests other than the benchmarks.
+
+### Sub-benchmarks
+
+You can run sub-benchmarks, just as you can run subtests:
+
+```go
+func BenchmarkURLString(b *testing.B) {
+    var benchmarks = []*URL{
+        {Scheme: "https"},
+        {Scheme: "https", Host: "foo.com"},
+        {Scheme: "https", Host: "foo.com", Path: "go"},
+    }
+    for _, u := range benchmarks {
+        b.Run(u.String(), func(b *testing.B) {
+            for i := 0; i < b.N; i++ {
+                u.String()
+            }
+        })
     }
 }
 ```
+
+### Comparing benchmarks
+
+1. Save the current benchmark result of the method:
+    ```shell
+    go test -bench . -count 10 > old.txt
+    ```
+    The `-count` flag runs the benchmark the number of times that you pass to it. There is no recommendation for the number you pass to `count`--`10` is a  random number.
+
+2. Refactor your code.
+3. Run the benchmarks again and compare with `benchstat`.
+   First, install `benchstat`:
+   ```shell
+   $ go install golang.org/x/perf/cmd/benchstat@latest
+   ```
+   Next, compare the `old.txt` and `new.txt` files:
+   ```shell
+   $ benchstat old.txt new.txt 
+   goos: linux
+   goarch: amd64
+   pkg: url/url
+   cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+                │   old.txt    │               new.txt                │
+                │    sec/op    │    sec/op     vs base                │
+   URLString-12   138.85n ± 5%   99.70n ± 14%  -28.19% (p=0.000 n=10)
+
+                │  old.txt   │              new.txt               │
+                │    B/op    │    B/op     vs base                │
+   URLString-12   64.00 ± 0%   56.00 ± 0%  -12.50% (p=0.000 n=10)
+
+                │  old.txt   │              new.txt               │
+                │ allocs/op  │ allocs/op   vs base                │
+   URLString-12   4.000 ± 0%   3.000 ± 0%  -25.00% (p=0.000 n=10)
+   ```
 
 ## Fuzz tests 
 
@@ -350,22 +561,19 @@ func FuzzHelloWorld(f *testing.F)  {
     })
 }
 ```
+## Build tags 
 
+Add build tags at the top of test files so you can specify whether or not you want to run them in your test commands. For example, the following build tag designates the file for go tests that use the `cli` tag:
 
-## Error handling and logging
+```go
+//go:build cli
+```
+To run tests in this file, run the following command:
+```shell
+$ go test -tags=cli
+```
+For additional details, see [Build constraints](https://pkg.go.dev/cmd/go#hdr-Build_constraints).
 
-The testing package provides methods troubleshoot during testing. The most useful are `t.Errorf()` and `t.Fatalf()`. The following table describes all available `t.*` test methods:
-
-| Method          | Description |
-|-----------------|:------------|
-| `t.Log()`        | Log a message. |
-| `t.Logf()`       | Log a formatted message.|
-| `t.Fail()`       | Mark the test as failed, but continue test execution. |
-| `t.FailNow()`    | Mark the test as failed, and immediately stop execution. |
-| `t.Error()`      | Combination of `Log()` and `Fail()`. |
-| `t.Errorf()`     | Combination of `Logf()` and `Fail()`. |
-| `t.Fatal()`      | Combination of `Log()` and `FailNow()`. |
-| `t.Fatalf()`     | Combination of `Logf()` and `FailNow()`. |
 
 ## Testing dependencies
 

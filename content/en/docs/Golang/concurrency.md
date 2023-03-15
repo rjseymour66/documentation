@@ -1,6 +1,6 @@
 ---
 title: "Concurrency"
-weight: 5
+weight: 50
 description: >
   Channels, Goroutines, Scheduling, and Synchronization.
 ---
@@ -569,3 +569,30 @@ The select statement is similar to a switch statement. It blocks execution of th
 ### Pipelines
 
 A pipeline is an extensible and efficient design pattern composed of concurrent stages. Each stage in the pipeline modifies data, then sends it to the next stage (channel) in the pipeline.
+
+#### Orchestrator function pattern
+
+This is when you create 2 functions:
+- Logic function: contains the core logic
+- Orchestrator: runs the producer's main logic in a goroutine
+
+This means that the orchestrator can have channel ownership--create, write to, and close the channel--while the logic function is placed in a goroutine.
+
+#### time.Ticker
+
+The [time.Ticker](https://pkg.go.dev/time#Ticker) type holds a channel that delivers ticks at intervals. You create one with the `NewTicker(d Duration)` function. It sends the current time to the channel, and the period of time between each send is the `d` value.
+
+For example, the following function creates a ticker that controls how often a request is sent to the `out` channel:
+
+```go
+func Throttle(in <-chan *http.Request, out chan<- *http.Request, delay time.Duration) {
+    t := time.NewTicker(delay)
+    defer t.Stop()
+ 
+    for r := range in {
+        <-t.C
+        out <- r
+    }
+}
+```
+The `<-t.C` line blocks the `for range` loop until the ticker sends a value every _n_ seconds. When the `t.C` channel unblocks, then the function can send a request from the `in` channel to the `out` channel.
