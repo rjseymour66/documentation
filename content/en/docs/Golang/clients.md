@@ -165,7 +165,7 @@ You read a response body incrementally, as a stream of bytes. Create a `bytes.Bu
 
 > Use an `io.Reader` to read any resource, and use an `io.Writer` to write to any resource. You can also use [`io.Copy(w, r)`](https://pkg.go.dev/io#Copy) that writes directly to a writer from a reader. Use the [`Discard`](https://pkg.go.dev/io#Discard) variable (of type `Writer`) to discard anything after you read it. You can treat `Discard` as `/dev/null`. This method preserves resources.
 
-# Testing HTTP Clients 
+## Testing HTTP Clients 
 
 Create handlers depending on what you want to test. For example, if you want to test successful HTTP requests:
 1. Create a handler that responds with HTTP status code 200
@@ -210,7 +210,7 @@ func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
 HTTP handlers in GO are concurrent, so the test server handles each request in its own goroutine. When you are tracking the number of requests, you should use the `atomic` package's concurrency-safe counters.
 
 
-## httptest server
+### httptest server
 
 [httptest](https://pkg.go.dev/net/http/httptest)
 
