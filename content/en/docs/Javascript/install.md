@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-weight: 1
+weight: 10
 description: >
   Installing nvm, Node.js, and npm.
 ---
