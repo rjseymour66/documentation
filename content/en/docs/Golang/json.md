@@ -158,6 +158,7 @@ type person struct {
 		fmt.Printf("Error: %v", err)
 	}
    ```
+Go unmarshals as many complete JSON objects as it can from the slice of bytes.
 
 ## Encoding JSON to a stream
 

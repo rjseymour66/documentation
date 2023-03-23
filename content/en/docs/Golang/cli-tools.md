@@ -54,6 +54,20 @@ flag.Usage = func() {
 func cliFunc(r io.Reader, useLines bool) {}
 cliFunc(os.Stdin, *lines)
 ```
+
+### Reading flag arguments
+
+When a flag accepts more than one arguments (such as a multiple strings), you can access each argument the `...` operator, similar to a variadic function.
+
+The following function signature accepts an `io.Reader` and any arguments that follow the flag on the command line:
+
+```go
+t, err := getTask(os.Stdin, flag.Args()...) {
+	// check error
+}
+```
+
+
 ----------------------------------------------------------------
 
 ## flag package
