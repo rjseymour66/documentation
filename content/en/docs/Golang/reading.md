@@ -1,8 +1,8 @@
 ---
-title: "Files"
+title: "Reading data"
 weight: 50
 description: >
-  Working with the Files package.
+  Reading data.
 ---
 
 ## File operations
@@ -153,44 +153,6 @@ func csv2float(r io.Reader, column int) ([]float64, error) {
 
 
 
-## Writing files
-
-Write data to a file with the `os` package. `WriteFile` writes to an existing file or creates one, if necessary:
-
-```go
-os.WriteFile(name string, data []byte, perm FileMode) error
-
-```
-> **Linux permissions**: Set Linux file permissions for the file owner, group, and all other users (`owner-group-others`). The permission options are read, write, and execute. Use octal values to set permssions:  
-  read: 4  
-  write: 2  
-  execute: 1  
-
-When you assign permissions in an programming language, you have to tell the program that you are using the octal base. You do this by beginning the number with a `0`. So, `0644` permissions means that the file owner has read and write permissions, and the group and all other users have read permissions.
-
-
-### tabWriter
-
-`tabwriter.Writer` writes tabulated data with formatted columns with consistent widths using tabs (`\t`).
-
-https://pkg.go.dev/text/tabwriter#pkg-overview
-
-## Temp files
-
-
-If you need to create a temp file:
-```go
-temp, err := os.CreateTemp("", "pattern*.extension")
-if err != nil {
-    // handle error
-}
-defer temp.Close()
-defer os.Remove(temp.name())
-```
-- First parameter is the directory that you want to create the temporary file in. If it is left blank, it uses the `/tmp` directory.
-- The second parameter defines the file name. Use a `*` character to tell the program to generate a random number to make the name unique.
-
-Always close and remove temp files with `defer`, unless you are creating a test helper. For test helpers, see `t.Cleanup()`.
 
 
 

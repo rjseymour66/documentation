@@ -115,3 +115,22 @@ var u *URL
 u.String() // (*url.URL).String(u)
 ```
 
+### if found
+
+Use `if found...` to determine if an element exists in a list:
+```go
+// returs a bool and int
+func (hl *HostsList) search(host string) (bool, int) {
+    ...
+}
+
+// found is a boolean. You can use a truncated syntax:
+func (hl *HostsList) Add(host string) error {
+	if found, _ := hl.search(host); found {
+		return fmt.Errorf("%w: %s", ErrExists, host)
+	}
+    ...
+}
+```
+
+The comma, ok idiom checks whether a value is in a map (??????)

@@ -17,25 +17,7 @@ description: >
 
 [Formatting verbs](https://pkg.go.dev/fmt#hdr-Printing)
 
-### Idioms
 
-Use `if found...` to determine if an element exists in a list:
-```go
-// returs a bool and int
-func (hl *HostsList) search(host string) (bool, int) {
-    ...
-}
-
-// found is a boolean. You can use a truncated syntax:
-func (hl *HostsList) Add(host string) error {
-	if found, _ := hl.search(host); found {
-		return fmt.Errorf("%w: %s", ErrExists, host)
-	}
-    ...
-}
-```
-
-The comma, ok idiom checks whether a value is in a map (??????)
 
 
 ## iota
@@ -113,49 +95,7 @@ func (r *Receiver) String() string {
 
 fmt.Print(*r)
 ```
-### io.Writer
 
-Commonly named `w` or `out`. Examples of `io.Writer`:
-- os.Stdout
-- bytes.Buffer (implements `io.Writer` (and `io.Reader`) as a pointer receiver, so use `&`)
-- files (type os.File implements `io.Writer`)
-- gzip.Writer
-
-> Use a file or `os.Stdout` in the program, and `bytes.Buffer` when testing.
-
-GZIP writer example:
-```go
-// open or create file at targetPath
-// rwxrxrx
-out, err := os.OpenFile(targetPath, os.O_RDWR|os.O_CREATE, 0755)
-if err != nil {
-    return err
-}
-defer out.Close()
-
-// open file w contents to zip
-in, err := os.Open(path)
-if err != nil {
-    return err
-}
-defer in.Close()
-
-// create new zip writer
-zw := gzip.NewWriter(out)
-zw.Name = filepath.Base(path)
-
-// copy contents
-if _, err = io.Copy(zw, in); err != nil {
-    return err
-}
-
-// close zip writer
-if err := zw.Close(); err != nil {
-    return err
-}
-// returns an error on fail
-return out.Close()
-```
 
 ### Methods
 
