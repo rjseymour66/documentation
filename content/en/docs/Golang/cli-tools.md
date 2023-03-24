@@ -2,60 +2,101 @@
 title: "CLI tools"
 weight: 80
 description: >
-  Working with CLI tools in Go.
+  Working with command line interface (CLI) tools in Go.
 ---
 
 ## Flags
 
-`flag.<FunctionName>` lets you define CLI flags. For example, to create a flag that performs an action if the flag is provided, you can use `flag.Bool`.
+When you create flags in Go, each flag definition is saved in a structure called [*Flagset](https://pkg.go.dev/flag#FlagSet) for tracking. The default Flagset for the `flag` package is named `CommandLine`, and it has access to all Flagset functions.
 
-The following flag function definition returns the value of a `bool` variable that stores the value of the flag. After you create a flag, you have to call the `Parse()` function to parse the arguments provided to the command line:
+
+The `Parse()` function extracts each command line flag in the `*Flagset` and creates name/value pairs, where the name is the flag name, and the value is the argument provided to the flag. Next, it updates any command line flag's internal variable.
+
+
+
+
+Define flags and execute their logic in the main method. Think of CLI flag implementations as programs that call external libraries, even if the library is included in the same project.
+
+
+
+A more complex and modular implementation consists of the following:
+- A FlagSet, defined in a file separate from `main.go`
+- Usage info
+
+## Simple implementation
+
+A simple implementation of the Go `flag` package consist of the following sections:
+- Usage
+- Flag definition
+- A switch statement that evaluates the flags provided to the command line
+
+### Usage
+
+Create the usage information with the `Usage` variable, and place it at the beginning of the `main` method. `Usage` is a pointer to an immediately-executing function that prints messages about the Flagset to STDOUT. Your job is to create the custom function that `Usage` points to.
+
+The following function defines a series of `Fprint[x]` statements that write formatted strings to the default Flagset, `Commandline`. `Commandline` uses its `Output` method to write to the usage destination. Finish the function definition with the `PrintDefaults()` method to print usage information for each flag:
+
+You can create a `const` multi-line string and write it to `flag.CommandLine.Output()`. Make sure you slice the string after the first index to remove the leading newline character:
 
 ```go
+const usage = `
+<toolname>
+Copyright 2023
+Usage:
+  todo [options]
+Options:`
+
+func main() {
+	flag.Usage = func() {
+		fmt.Fprintln(flag.CommandLine.Output(), usage[1:])
+		flag.PrintDefaults()
+	}
+```
+
+### Flag definition
+
+After the `Usage` function, create the flag definitions. Go provides flag definition functions for common primitive types (`string`, `int`, etc.). A flag definition contains information about the flag, such as defaults and usage information.
+
+The flag definition function can create internal variables for the flag in the Flagset and return a pointer to that variable, or it can use a variable that you define. For example, if you are defining a `string` flag, you use the `flag.String(...)` function to return a pointer to an internal variable, or you can use the `flag.StringVar(&varName, ...)` to provide your own variable for the flag definition. `flag.*Var()` functions provide more control over variable definitions.
+
+Below are examples of both flag definition types. After you define all flags, you must call the `Parse()` function to parse the arguments provided to the command line:
+
+```go
+var lang string
+flag.StringVar(&lang, "lang", "en", "The required language, e.g. en, ur...")
+
 lines := flag.Bool("l", false, "Count the number of lines")
-      // flag.Bool(flagName, default value, usage info)
+lang := flag.String("lang", "en", "The required...")
+
 flag.Parse()
 ```
-> **IMPORTANT**: Each `flag.*` returns a pointer. To use the value in this variable that 'points' to an address, you have to derefence it with the `*` symbol. If you don't dereference, you will use the address of the variable, not the value stored at the address
+Now, you have a variable `lines` that stores the address of a `bool` set to `false`. When a user includes the `-l` flag in the CLI invocation, `lines` is set to true. For `lang := flag.String(...)`, the variable stores the string that the user enters after the `-lang` flag.
 
-Now, you have a variable `lines` that stores the address of a `bool` set to `false`. When a user includes the `-l` flag in the CLI invocation, `lines` is set to true. For `str := flag.String(...)`, the variable stores the string that the user enters after the `-str` flag.
+You do not have to define a `help` flag--Go provides the `-h` flag by default.
 
-### Multiple flags
+### Switch statement
 
-If you use multiple flags in your application, use a `switch` statment to select the action based on the provided flags:
+When it's time to evaluate a Flagset that contains more than one flag--after you have checked for any environment variables or completed any other logic--use a `switch` statement.
+
+> **IMPORTANT**: Each `flag.[Type]` flag definition function returns a pointer. To use the value in this variable that 'points' to an address, you have to derefence it with the `*` symbol. If you don't dereference, you will use the address of the variable, not the value stored at the address
+
+Each `case` statement should handle a flag defintion. You can evaluate flag types such as `int` or `string` with an expression. When you evaluate a `Bool` flag, check that it is set to true. (By default, a `Boolean` flag is set to false. When a user includes the flag, it is set to `true`.) The `default` case should print usage information and exit. For example:
 
 ```go
 switch {
-case *flag1:
+case  iFlag > 0:
     // handle flag
-case *flag2:
+case *boolFlag:
     // handle flag
 default:
-...
+	// Invalid flag provided
+	flag.Usage()
+	os.Exit(1)
 }
 ```
-### Usage info
+## Test the simple implementation
 
-The default values for each flag are listed when the user uses the `-h` option. You can add a custom usage message with the `flag.Usage()` function. You have to assign `flag.Usage()` a immediately-executing function that prints info to STDOUT.
-
-Place the `flag.Usage()` definition at the beginning of the main method:
-
-```go
-flag.Usage = func() {
-    fmt.Fprintf(flag.CommandLine.Output(), "%s tool. Additional info\n", os.Args[0])
-    fmt.Fprintf(flag.CommandLine.Output(), "Copyright 2022\n")
-    fmt.Fprintln(flag.CommandLine.Output(), "Usage information:")
-    // print the default settings for each flag
-    flag.PrintDefaults()
-}
-```
-
-```go
-func cliFunc(r io.Reader, useLines bool) {}
-cliFunc(os.Stdin, *lines)
-```
-
-### Reading flag arguments
+## Reading flag arguments
 
 When a flag accepts more than one arguments (such as a multiple strings), you can access each argument the `...` operator, similar to a variadic function.
 
