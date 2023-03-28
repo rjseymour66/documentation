@@ -12,16 +12,13 @@ When you create flags in Go, each flag definition is saved in a structure called
 
 The `Parse()` function extracts each command line flag in the `*Flagset` and creates name/value pairs, where the name is the flag name, and the value is the argument provided to the flag. Next, it updates any command line flag's internal variable.
 
-
-
-
 Define flags and execute their logic in the main method. Think of CLI flag implementations as programs that call external libraries, even if the library is included in the same project.
 
 
-
-A more complex and modular implementation consists of the following:
-- A FlagSet, defined in a file separate from `main.go`
-- Usage info
+> TODO  
+> A more complex and modular implementation consists of the following:
+> - A FlagSet, defined in a file separate from `main.go`
+> - Usage info
 
 ## Simple implementation
 
@@ -95,6 +92,95 @@ default:
 }
 ```
 ## Test the simple implementation
+
+External tests for a command line tool test that you can build the binary and that the flags process input correctly.
+
+### TestMain
+
+You build the binary in the `main` method, and you test the main method with the `TestMain` function. Pass the `TestMain` function the `M` type so you can run other test functions within the test file with any artifacts created in `TestMain`. Generally, `TestMain` performs the following steps:
+
+1. Defines the command that builds the CLI binary. Use the `Command` type from the `exec` package to construct the command. `Command` returns a `Cmd` type, which represents an extenal command that you can run. The following example creates a `go build` command:
+	```go
+	build := exec.Command("go", "build", "-o", binaryName)
+	``` 
+	You will use this binary when you test CLI tool flags in other test methods.
+
+2. Run the command with the `Cmd.Run` method:
+   ```go
+   if err := build.Run(); err != nil {
+	// handle error
+   }
+3. Run other tests in the test file with `m.Run()`.
+4. Remove any artifacts with `os.Remove(artifact-name)`, including the binary that you built with `exec.Command`:
+   ```go
+   os.Remove(binaryName)
+   os.Remove(fileName)
+   ```
+### Test flags
+
+Test the CLI tool flags with standard `TestXxx` methods and `t.Run(name, func())` subtests. These tests use the CLI tool test binary that you built in the `TestMain` function.
+
+In addition to the standard arrange, act, assert strategy, CLI tests need the absolute path to the test directory so you can append the binary name to the path and execute it. This is because you cannot assume that the test directory is in the machine's PATH variable:
+
+```go 
+dir, err := os.Getwd()
+// handle error
+```
+After you have the testing directory stored in `dir`, you need to append the binary that you built in `MainTest` to create an executable path:
+```go
+cmdPath := filepath.Join(dir, binaryName)
+```
+
+Next, you can run your subtests using the `cmdPath` to represent the CLI tool. Add CLI flags with the `exec.Command()` command, and execute the command with the `Cmd.Run` method, exactly as you did when you built the binary in `TestMain`:
+
+```go
+cmd := exec.Command(cmdPath, "-flagName", args)
+
+if err := cmd.Run(); err != nil {
+	// handle error
+}
+```
+### Testing STDIN tools
+
+A CLI tool might accept input from STDIN. The `Cmd` type in the `exec` package can connect a pipe to a command's standard input when it is executed:
+
+1. Build the command:
+   ```go
+   cmd := exec.Command(cmdPath, "-flagThatReadsFromStdin")
+   ```
+2. Create a pipe for the command with the `StdinPipe()` method:
+   ```go
+   cmdStdin, err := cmd.StdinPipe()
+   if err != nil {
+	// handle error
+   }
+   ```
+   This pipe connects to `cmd` when it is run.
+3. Write data to the pipe with the `io.WriteString` method. This method accepts an `io.Writer` and a string. After you write the data, make sure you close the pipe on the command:
+   ```go
+   io.WriteString(cmdStdin, strToWrite)
+   cmd.Stdin.Close()
+   ```
+4. Run the command with the `Run` method:
+   ```go
+   if err := cmd.Run(); err != nil {
+	// handle error
+   }
+   ```
+
+> You can also test the STDIN and STDERR of a command with the `.CombinedOutput()` function for the `Cmd` type. This command returns a slice of bytes > and an error, so cast any output to a string for comparisons:
+> ```go
+> 	out, err := cmd.CombinedOutput()
+> 	if err != nil {
+> 		// handle error
+> 	}
+> 
+> 	if val1 != string(out) {
+> 		// test logic
+> 	}
+> ```
+
+
 
 ## Reading flag arguments
 
