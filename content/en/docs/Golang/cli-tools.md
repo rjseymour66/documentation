@@ -110,6 +110,8 @@ You build the binary in the `main` method, and you test the main method with the
    if err := build.Run(); err != nil {
 	// handle error
    }
+   ```
+   > Use standard `fmt` and `os` packages to handle errors in `TestMain`. The `M` type does not have `Errorf` and `Fatalf` methods.
 3. Run other tests in the test file with `m.Run()`.
 4. Remove any artifacts with `os.Remove(artifact-name)`, including the binary that you built with `exec.Command`:
    ```go
@@ -140,6 +142,8 @@ if err := cmd.Run(); err != nil {
 	// handle error
 }
 ```
+
+
 ### Testing STDIN tools
 
 A CLI tool might accept input from STDIN. The `Cmd` type in the `exec` package can connect a pipe to a command's standard input when it is executed:
@@ -159,7 +163,7 @@ A CLI tool might accept input from STDIN. The `Cmd` type in the `exec` package c
 3. Write data to the pipe with the `io.WriteString` method. This method accepts an `io.Writer` and a string. After you write the data, make sure you close the pipe on the command:
    ```go
    io.WriteString(cmdStdin, strToWrite)
-   cmd.Stdin.Close()
+   cmdStdin.Close()
    ```
 4. Run the command with the `Run` method:
    ```go
@@ -179,6 +183,7 @@ A CLI tool might accept input from STDIN. The `Cmd` type in the `exec` package c
 > 		// test logic
 > 	}
 > ```
+> You do not have to use cmd.Run() to get the `CombinedOutput()`.
 
 
 
