@@ -249,25 +249,32 @@ log.LstdFlags uses the default log flags, such as date and time.
 
 ## File operations
 
-### Get file name
+#### Get file name
 
 Get the name of the file:
 ```go
 name := fileName.Name()
 ```
-
-### Examining file metadata
-
-Use [os.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
-```go
-info, err := os.Stat(fileName)
-```
-
-### Extensions
+#### File extension
 
 Return the file extension with `filepath.Ext(file)`:
 ```go
 ext := filepath.Ext(file)
+```
+#### Delete a file
+
+Remove a file:
+```go
+if err := os.Remove; err != nil {
+	// handle err
+}
+```
+
+### File metadata
+
+Use [os.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
+```go
+info, err := os.Stat(fileName)
 ```
 
 ## Opening a file
