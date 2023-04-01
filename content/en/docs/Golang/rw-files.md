@@ -1,38 +1,9 @@
 ---
-title: "Reading data"
+title: "Reading, writing, files"
 weight: 50
 description: >
-  Reading data.
+  Working with files. Reading and writing data, too.
 ---
-
-## File operations
-
-### Get file name
-
-Get the name of the file:
-```go
-name := fileName.Name()
-```
-
-### Examining file metadata
-
-Use [os.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
-```go
-info, err := os.Stat(fileName)
-```
-
-## Opening a file
-
-Open a file with `os.OpenFile()`:
-```go
-f, err = os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-if err != nil {
-    fmt.Fprintln(os.Stderr, err)
-    os.Exit(1)
-}
-// always defer the close
-defer f.Close()
-```
 
 ## Reading files
 
@@ -180,9 +151,139 @@ func byteStuff() []bytes {
 }
 ```
 
+## io.Writer
+
+Commonly named `w` or `out`. Examples of `io.Writer`:
+- os.Stdout
+- bytes.Buffer (implements `io.Writer` (and `io.Reader`) as a pointer receiver, so use `&`)
+- files (type os.File implements `io.Writer`)
+- gzip.Writer
+
+> Use a file or `os.Stdout` in the program, and `bytes.Buffer` when testing.
+
+GZIP writer example:
+```go
+// open or create file at targetPath
+// rwxrxrx
+out, err := os.OpenFile(targetPath, os.O_RDWR|os.O_CREATE, 0755)
+if err != nil {
+    return err
+}
+defer out.Close()
+
+// open file w contents to zip
+in, err := os.Open(path)
+if err != nil {
+    return err
+}
+defer in.Close()
+
+// create new zip writer
+zw := gzip.NewWriter(out)
+zw.Name = filepath.Base(path)
+
+// copy contents
+if _, err = io.Copy(zw, in); err != nil {
+    return err
+}
+
+// close zip writer
+if err := zw.Close(); err != nil {
+    return err
+}
+// returns an error on fail
+return out.Close()
+```
+
+## Writing files
+
+Write data to a file with the `os` package. `WriteFile` writes to an existing file or creates one, if necessary:
+
+```go
+os.WriteFile(name string, data []byte, perm FileMode) error
+
+```
+> **Linux permissions**: Set Linux file permissions for the file owner, group, and all other users (`owner-group-others`). The permission options are read, write, and execute. Use octal values to set permssions:  
+  read: 4  
+  write: 2  
+  execute: 1  
+
+When you assign permissions in an programming language, you have to tell the program that you are using the octal base. You do this by beginning the number with a `0`. So, `0644` permissions means that the file owner has read and write permissions, and the group and all other users have read permissions.
 
 
-## Filesystem
+### tabWriter
+
+`tabwriter.Writer` writes tabulated data with formatted columns with consistent widths using tabs (`\t`).
+
+https://pkg.go.dev/text/tabwriter#pkg-overview
+
+## Temp files
+
+
+If you need to create a temp file:
+```go
+temp, err := os.CreateTemp("", "pattern*.extension")
+if err != nil {
+    // handle error
+}
+defer temp.Close()
+defer os.Remove(temp.name())
+```
+- First parameter is the directory that you want to create the temporary file in. If it is left blank, it uses the `/tmp` directory.
+- The second parameter defines the file name. Use a `*` character to tell the program to generate a random number to make the name unique.
+
+Always close and remove temp files with `defer`, unless you are creating a test helper. For test helpers, see `t.Cleanup()`.
+
+
+## Logging
+
+Use logs to provide feedback for background processes. To create a logger, you need to create:
+- [*log.logger](https://pkg.go.dev/log#Logger) type
+- Logging destination ([w io.Writer](#interfaces))
+
+By default, Go's `log` library sends messages to STDERR, but you can configure it to write to a file. It adds the date and time to each log entry, and you can add a prefix to the string to help searchability
+```go
+l := log.New(io.Writer, "LOGGER PREFIX: ", log.LstdFlags)
+```
+log.LstdFlags uses the default log flags, such as date and time.
+
+## File operations
+
+### Get file name
+
+Get the name of the file:
+```go
+name := fileName.Name()
+```
+
+### Examining file metadata
+
+Use [os.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
+```go
+info, err := os.Stat(fileName)
+```
+
+### Extensions
+
+Return the file extension with `filepath.Ext(file)`:
+```go
+ext := filepath.Ext(file)
+```
+
+## Opening a file
+
+Open a file with `os.OpenFile()`:
+```go
+f, err = os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+if err != nil {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+}
+// always defer the close
+defer f.Close()
+```
+
+### Filesystem
 
 The `filepath` library creates cross-platform filepaths--they compile correctly for each supported OS.
 

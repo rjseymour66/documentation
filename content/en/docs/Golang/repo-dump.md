@@ -325,17 +325,7 @@ func mockCmd(exe string, args ...string) *exec.Cmd {
 	return cmd
 }
 ```
-## Logging
 
-Use logs to provide feedback for background processes. To create a logger, you need to create:
-- [*log.logger](https://pkg.go.dev/log#Logger) type
-- Logging destination ([w io.Writer](#interfaces))
-
-By default, Go's `log` library sends messages to STDERR, but you can configure it to write to a file. It adds the date and time to each log entry, and you can add a prefix to the string to help searchability
-```go
-l := log.New(io.Writer, "LOGGER PREFIX: ", log.LstdFlags)
-```
-log.LstdFlags uses the default log flags, such as date and time.
 
 
 ### Templates
