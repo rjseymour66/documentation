@@ -151,7 +151,24 @@ func byteStuff() []bytes {
 }
 ```
 
-## io.Writer
+
+
+## Writing files
+
+Write data to a file with the `os` package. `WriteFile` writes to an existing file or creates one, if necessary:
+
+```go
+os.WriteFile(name string, data []byte, perm FileMode) error
+
+```
+> **Linux permissions**: Set Linux file permissions for the file owner, group, and all other users (`owner-group-others`). The permission options are read, write, and execute. Use octal values to set permssions:  
+  read: 4  
+  write: 2  
+  execute: 1  
+
+When you assign permissions in an programming language, you have to tell the program that you are using the octal base. You do this by beginning the number with a `0`. So, `0644` permissions means that the file owner has read and write permissions, and the group and all other users have read permissions.
+
+### io.Writer
 
 Commonly named `w` or `out`. Examples of `io.Writer`:
 - os.Stdout
@@ -161,7 +178,9 @@ Commonly named `w` or `out`. Examples of `io.Writer`:
 
 > Use a file or `os.Stdout` in the program, and `bytes.Buffer` when testing.
 
-GZIP writer example:
+### Archiving files
+
+The following is a GZIP writer example:
 ```go
 // open or create file at targetPath
 // rwxrxrx
@@ -195,21 +214,6 @@ if err := zw.Close(); err != nil {
 return out.Close()
 ```
 
-## Writing files
-
-Write data to a file with the `os` package. `WriteFile` writes to an existing file or creates one, if necessary:
-
-```go
-os.WriteFile(name string, data []byte, perm FileMode) error
-
-```
-> **Linux permissions**: Set Linux file permissions for the file owner, group, and all other users (`owner-group-others`). The permission options are read, write, and execute. Use octal values to set permssions:  
-  read: 4  
-  write: 2  
-  execute: 1  
-
-When you assign permissions in an programming language, you have to tell the program that you are using the octal base. You do this by beginning the number with a `0`. So, `0644` permissions means that the file owner has read and write permissions, and the group and all other users have read permissions.
-
 
 ### tabWriter
 
@@ -238,7 +242,7 @@ Always close and remove temp files with `defer`, unless you are creating a test 
 ## Logging
 
 Use logs to provide feedback for background processes. To create a logger, you need to create:
-- [*log.logger](https://pkg.go.dev/log#Logger) type
+- [*log.Logger](https://pkg.go.dev/log#Logger) type
 - Logging destination ([w io.Writer](#interfaces))
 
 By default, Go's `log` library sends messages to STDERR, but you can configure it to write to a file. It adds the date and time to each log entry, and you can add a prefix to the string to help searchability
@@ -272,12 +276,15 @@ if err := os.Remove; err != nil {
 
 ### File metadata
 
-Use [os.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
+Use [fs.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
 ```go
 info, err := os.Stat(fileName)
+if err != nil {
+	// handle error
+}
 ```
 
-## Opening a file
+### Opening a file
 
 Open a file with `os.OpenFile()`:
 ```go
@@ -290,7 +297,7 @@ if err != nil {
 defer f.Close()
 ```
 
-### Filesystem
+## Directory paths
 
 The `filepath` library creates cross-platform filepaths--they compile correctly for each supported OS.
 

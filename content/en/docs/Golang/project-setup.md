@@ -28,11 +28,23 @@ $(GO_VERSION)
 
 ### Build
 
-Build your application:
+Build the application for your host machine:
 
 ```Makefile
 build:
     go build -o appname path/to/main.go
+```
+
+Build binaries for multiple architectures, and store them in a `bin/` directory at the project root:
+
+```Makefile
+build:
+	# Linux
+	GOOS=linux   GOARCH=amd64 go build -o ./bin/appname_linux_amd64   .path/to/main.go
+	# macOS
+	GOOS=darwin  GOARCH=amd64 go build -o ./bin/appname_darwin_amd64  .path/to/main.go
+	# windows
+	GOOS=windows GOARCH=amd64 go build -o ./bin/appname_win_amd64.exe .path/to/main.go
 ```
 
 ### Cross-compilation

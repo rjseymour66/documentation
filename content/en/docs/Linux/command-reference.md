@@ -83,7 +83,7 @@ curl -L -XPOST -d '{"task":"Task 1"}' -H 'Content-Type: application/json' http:/
 
 ```
 
-#### Compressed files
+## Compress files
 
 Unzip `.zip` files with `unzip`. Do not include a directory if you want to unzip it to the current working directory:
 ```bash
