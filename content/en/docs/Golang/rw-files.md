@@ -312,3 +312,36 @@ Extract the last element in a filepath--generally, the file--with the filepath.B
 filename := filepath.Base("/path/to/home.html")
 // filename == home.html
 ```
+Return the absolute path of a file:
+```go
+	absPath := "/home/username/dev/go-projects/walker/main.go"
+	fmt.Println(filepath.Dir(absPath)) // /home/username/dev/go-projects/walker
+```
+
+Return the relative path between two paths:
+```go
+absPath := "/home/username/dev/go-projects/walker/main.go"
+relPath, err := filepath.Rel("/home", absPath)
+if err != nil {
+	fmt.Fprintln(os.Stderr, err)
+}
+fmt.Println(relPath) //username/dev/go-projects/walker/main.go
+```
+
+Return the base of the path. This is generally a file name:
+
+```go
+fullPath := "/home/username/dev/go-projects/walker/main.go"
+base := filepath.Base(fullPath)
+fmt.Println(base) // main.go
+```
+
+Join multiple paths into a single path:
+
+```go
+start := "/home"
+middle := "username/dev/go-projects"
+end := "/walker/main.go"
+fmt.Println(filepath.Join(start, middle, end)) // /home/username/dev/go-projects/walker/main.go
+```
+
