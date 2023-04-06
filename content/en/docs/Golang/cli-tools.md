@@ -378,7 +378,7 @@ cobra-cli add subcommand
 
 This adds a `subcommand.go` file in the `cmd/` directory. In the `subcommand.go` file, the `init()` function adds the command to the `rootCmd`. 
 
-> Think of `rootCmd` as the `CommandLine`, the default FlagSet for the Go `flag` pacakge.
+> Think of `rootCmd` as the `CommandLine`, the default FlagSet for the Go `flag` pacakge, and each file in the `cmd/` directory as equivalent to a flag definition in the Go `flag` package.
 
 
 
