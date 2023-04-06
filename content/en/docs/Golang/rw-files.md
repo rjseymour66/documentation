@@ -180,22 +180,16 @@ Commonly named `w` or `out`. Examples of `io.Writer`:
 
 ### Archiving files
 
-The following is a GZIP writer example:
+Compress files to an `io.Writer` with the [`compress/gzip` package](https://pkg.go.dev/compress/gzip@go1.20.2). You can create a writer with `NewWriter`, and write compressed data to the `io.Writer` argument. Assign the `Name` value to the name of the source file:
+
 ```go
-// open or create file at targetPath
-// rwxrxrx
 out, err := os.OpenFile(targetPath, os.O_RDWR|os.O_CREATE, 0755)
 if err != nil {
     return err
 }
 defer out.Close()
 
-// open file w contents to zip
-in, err := os.Open(path)
-if err != nil {
-    return err
-}
-defer in.Close()
+...
 
 // create new zip writer
 zw := gzip.NewWriter(out)
@@ -205,15 +199,26 @@ zw.Name = filepath.Base(path)
 if _, err = io.Copy(zw, in); err != nil {
     return err
 }
-
-// close zip writer
-if err := zw.Close(); err != nil {
-    return err
-}
-// returns an error on fail
-return out.Close()
 ```
 
+One method of compressing a file is to use the `io.Copy` method, passing the gzip writer as the destination writer:
+```go
+if _, err = io.Copy(zw, in); err != nil {
+    return err
+}
+```
+
+After you write all data, you must close the gzip writer and the writer that you passed as the argument to the `NewWriter` constructor. Handle the error when you close the gzip writer--don't defer it--because you want to know if the compression fails:
+
+```go
+if err := zw.Close(); err != nil {
+	return err
+}
+
+if err := out.Close(); err != nil { 
+	// handle err 
+}
+```
 
 ### tabWriter
 
@@ -286,7 +291,16 @@ if err != nil {
 
 ### Opening a file
 
-Open a file with `os.OpenFile()`:
+To open a file for reading (`O_RDONLY`), use the `Open` function:
+
+```go 
+in, err := os.Open(filename)
+if err != nil {
+	return nil
+}
+```
+
+When you need to do more than read a file, use  `os.OpenFile()`. `os.OpenFile()` accepts flags (`O_APPEND`) so you can perform more actions:
 ```go
 f, err = os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 if err != nil {
@@ -344,4 +358,4 @@ middle := "username/dev/go-projects"
 end := "/walker/main.go"
 fmt.Println(filepath.Join(start, middle, end)) // /home/username/dev/go-projects/walker/main.go
 ```
-
+`os.MkdirAll` creates a directory tree from its `path` argument. It only creates directories that do not exist. If the path exists, it does nothing.

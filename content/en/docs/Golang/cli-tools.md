@@ -319,6 +319,79 @@ In the previous example:
 
 ## Cobra CLI
 
+### Install 
+
+Download and install Cobra and the the cobra generator (cli):
+
+```shell
+$ go get -u github.com/spf13/cobra@latest
+$ go install github.com/spf13/cobra-cli@latest
+```
+
+### Create a config file
+
+Create a config file at `~/.cobra.yaml` so you can initialize a project without having to add boilerplate information for each project. 
+
+The following is an example:
+```yaml
+author: Your Name
+license: MIT
+useViper: true
+```
+
+### Create a project
+
+After you install Cobra, Cobra CLI, and create a `go.mod` file, you can create a project. 
+
+Use Cobra CLI to bootstrap the project. The following command creates the cobra-todo project:
+
+```shell
+$ cobra-cli init
+```
+
+This command creates the following directory structure:
+
+```shell
+.
+├── cmd
+│   └── root.go
+├── go.mod
+├── go.sum
+├── LICENSE
+└── main.go
+```
+In the previous directory tree:
+- `cmd/root.go` stores the root command of the application. This is a parent command, so the `Run` function is commented out and does not do anything by default.
+- `main.go` runs the `Execute` function in `cmd/root.go`.
+
+### root.go structure
+
+Add `Version` to the cobra.Command type.
+
+### Add a subcommand
+
+Add a command with the `add` command:
+
+```shell
+cobra-cli add subcommand
+```
+
+This adds a `subcommand.go` file in the `cmd/` directory. In the `subcommand.go` file, the `init()` function adds the command to the `rootCmd`. 
+
+> Think of `rootCmd` as the `CommandLine`, the default FlagSet for the Go `flag` pacakge.
+
+
+
+### subcommand structure
+
+
+
+
+
+--------------------------------------------
+
+## Cobra CLI
+
 TODO: Setup
 
 1. Create the functions that the tool will use
@@ -328,12 +401,6 @@ TODO: Setup
    - Args: 
 4. Update the `Run` field to `RunE`. `RunE` returns a function so you can test it. The signature returns an error.
 
-### Install
-
-Download and install from the [Github repo](https://github.com/spf13/cobra).
-
-1. `$ go get -u github.com/spf13/cobra@latest`
-2. `$ go install github.com/spf13/cobra-cli@latest`
 
 ### Start a project
 
@@ -385,7 +452,9 @@ $ cobra-cli add list -p hostsCmd
 ### Command completion and docs
 
 
+## Viper
 
+Viper helps handle environment variables and configuration files.
 
 ### Viper
 
