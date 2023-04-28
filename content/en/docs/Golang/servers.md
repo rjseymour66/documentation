@@ -6,9 +6,11 @@ description: >
 ---
 
 
-## Servers
-
 The `net/http` package provides the `ListenAndServer()` function that creates a default server. However, this function does not allow you to define timeouts to manage bad connections or server resources, so you should define custom server.
+
+## Writing a server
+
+Go provides the `Server` type and the `Handler` type. `Server` listens on a port for client requests and then passes the request in a goroutine to a `Handler` type. The `Handler` type 
 
 ### Custom servers
 

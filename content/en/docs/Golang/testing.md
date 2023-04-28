@@ -581,11 +581,13 @@ For additional details, see [Build constraints](https://pkg.go.dev/cmd/go#hdr-Bu
 ### Mocks
 ### Fakes
 
+## Test data
+
+Store any testing files in the `testdata` directory. Go tooling ignores this directory when building and compiling the program.
+
 ## Strategies
 
 When testing file writes, use _goldenfiles_: files that contain the expected results and that you load during tests to validate output.
-
-> **IMPORTANT**: Put goldenfiles, and other testing files, in a directory called `testdata`. Go tooling ignores this directory when building and compiling the program.
 
 `iotest.TimeoutReader(r)` simulates a reading failure and returns a timeout error.
 
