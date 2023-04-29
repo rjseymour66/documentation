@@ -58,7 +58,12 @@ handler := func(_ http.ResponseWriter, _ *http.Request) {
 }
 ```
 
-## Stringer
+
+## Interfaces
+
+When a type satisfies an interface, you say _type X is a Y_. For example, _URL is a Stringer_ or _Parser is a Reader_.
+
+### Stringer
 
 `Stringer` prints the string representation of the object. The `fmt.Print[x]` packages detect when a type has a `Stringer` method, so it calls that method for proper formatting.
 
@@ -85,11 +90,46 @@ func (u *URL) testString() string {
 }
 ```
 
-## Interfaces
+### sort.Interface
 
-When a type satisfies an interface, you say _type X is a Y_. For example, _URL is a Stringer_ or _Parser is a Reader_.
+The Go `sort` package has a [`Slice` method](https://pkg.go.dev/sort#Slice) to sort the values in a slice. However, you can implement the `sort.Interface` interface to create a custom `sort` method.
 
-## Empty interface
+`sort.Interface` has the following methods:
+```go
+// Len is the number of elements in the collection.
+Len() int
+ 
+// Less reports whether the element with index i 
+// must sort before the element with index j.
+Less(i, j int) bool
+ 
+// Swap swaps the elements with indexes i and j.
+Swap(i, j int)
+```
+`sort.Interface` operates on collection types, so you should create a custom collection type to implement the interface methods. Name the type in a way that describes the sorting strategy. For example, the following implementation sorts a slice of type `Book` by the `Author` field:
+
+```go
+// Define a custom type whose name describe the sorting strategy.
+type byAuthor []Book
+ 
+// Len returns the length of the collection.
+func (b byAuthor) Len() int { return len(b) }
+ 
+// Swap swaps two books.
+func (b byAuthor) Swap(i, j int) { 
+    b[i], b[j] = b[j], b[i]
+}
+ 
+// Less returns books sorted by Author and then Title.
+func (b byAuthor) Less(i, j int) bool {
+    if b[i].Author != b[j].Author {
+        return b.LessByAuthor(i, j)
+    }
+    return b[i].Title < b[j].Title
+}
+```
+
+### Empty interface
 
 Go versions prior to 1.18 used the empty interface: `interface{}`. This is an interface that did not implement any methods, so any type satisfied it. In Go 1.18 and later, `interface{}` was replaced with `any`. 
 

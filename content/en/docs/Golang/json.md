@@ -6,7 +6,7 @@ description: >
 ---
 
 
-> **IMPORTANT**: Always pass pointers to `json.Marshall` and `json.Unmarshall`.
+> **IMPORTANT**: Always pass pointers to `json.Marshall` and `json.Unmarshall`. If you pass a value, the JSON functions operate on a copy and sends the data to the garbage collector after the function returns.
 
 
 ## Marshal into JSON
@@ -182,4 +182,20 @@ if err := json.NewEncoder(&buffer).Encode(item); err != nil {
 
 ## Decoding JSON from stream
 
-The [json.Decoder](https://pkg.go.dev/encoding/json@go1.19.4#Decoder) is just like the `json.Encoder`, except that it reads from an input stream (`io.Reader`) and decodes JSON into its memory representation (a struct):
+The [json.Decoder](https://pkg.go.dev/encoding/json@go1.19.4#Decoder) is just like the `json.Encoder`, except that it reads from an input stream (`io.Reader`) and decodes JSON into its memory representation (a struct).
+
+The following example reads from a JSON-formatted file (an `io.Reader`) and decodes the JSON into a slice:
+
+```go
+f, err := os.Open(filePath)
+if err != nil {
+	return nil, err
+}
+defer f.Close()
+
+var sl []SliceType
+
+if err := json.NewDecoder(f).Decode(&sl); err != nil {
+	return nil, err
+}
+```

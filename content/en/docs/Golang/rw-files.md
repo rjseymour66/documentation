@@ -5,7 +5,57 @@ description: >
   Working with files. Reading and writing data, too.
 ---
 
-## Reading files
+## File operations
+
+#### Get file name
+
+```go
+name := fileName.Name()
+```
+#### File extension
+```go
+ext := filepath.Ext(file)
+```
+#### Delete a file
+```go
+if err := os.Remove; err != nil {
+	// handle err
+}
+```
+
+#### File metadata
+
+Use [fs.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
+```go
+info, err := os.Stat(fileName)
+if err != nil {
+	// handle error
+}
+```
+
+#### Open a file
+
+To open a file for reading (`O_RDONLY`), use the `Open` function:
+
+```go 
+in, err := os.Open(filename)
+if err != nil {
+	return nil
+}
+```
+
+When you need to do more than read a file, use  `os.OpenFile()`. `os.OpenFile()` accepts flags (`O_APPEND`) so you can perform more actions:
+```go
+f, err = os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+if err != nil {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+}
+// always defer the close
+defer f.Close()
+```
+
+## Read a file
 
 Read data from a file with the `os` package. `ReadFile` reads the contents of a file and returns a `nil` error:
 ```go
@@ -74,7 +124,27 @@ for scanner.Scan() {
     byteLength += len(scanner.Bytes())    
 }
 ```
-### Reading CSV data
+### Buffered reading
+
+When you open a file with `os.Open`, the computer uses the default buffer size for the `os.File` type. This default size is os-specific, which does not provide control over your input/output (I/O) operations.
+
+Reading a file with a buffered reader lets you change the file handle's buffer size, which gives you control over how many system calls the OS makes during I/O. The Go `bufio` package provides the [`NewReaderSize` function](https://pkg.go.dev/bufio#NewReaderSize) that returns a `bufio.Reader` whose buffer has at least the specified size. Buffer size is important because it controls how much memory the OS consumes for the operation.
+
+The following example creates a reader with a 1MB buffer to read from a file:
+
+```go
+// open file
+f, err := os.Open(...)
+
+bReader := bufio.NewReaderSize(f, 1024 * 1024)
+if err := json.NewDecoder(bReader).Decode(&typeName); err != nil {
+	return nil, err
+}
+```
+
+> You do not have to close a `bufio.Reader`
+
+### CSV data
 
 Create a `.NewReader()` the same way that you create a `.NewScanner()` and read with the following methods:
 - `.Read()` returns a `[]string` that represents a row.
@@ -121,39 +191,7 @@ func csv2float(r io.Reader, column int) ([]float64, error) {
 	return data, nil
 }
 ```
-
-
-
-
-
-
-
-
-
-## Buffers and bytes
-
-Many functions return `[]byte`, so you might have to fill a buffer with data to return.
-
-The `bytes` package contains two types: `Buffer` and `Reader`. The `Buffer` returns a variable size buffer to read and write data. It provides `Write*` methods for `strings`, `runes`, `bytes`, etc.:
-
-```go
-func byteStuff() []bytes {
-    // compose the page using a buffer of bytes to write to a file
-    var buffer bytes.Buffer
-
-    // write html to bytes buffer
-    buffer.WriteString("The first string")
-    buffer.Write([]byte{'T', 'h', 'e', 's', 'e', 'c', 'o', 'n', 'd', 's', 't', 'r', 'i', 'n', 'g'})
-    buffer.WriteString("The last string")
-
-    // return []bytes
-    return buffer.Bytes()
-}
-```
-
-
-
-## Writing files
+## Write to a file
 
 Write data to a file with the `os` package. `WriteFile` writes to an existing file or creates one, if necessary:
 
@@ -178,7 +216,28 @@ Commonly named `w` or `out`. Examples of `io.Writer`:
 
 > Use a file or `os.Stdout` in the program, and `bytes.Buffer` when testing.
 
-### Archiving files
+### Buffered writing
+
+When you open a file with `os.Open`, the computer uses the default buffer size for the `os.File` type. This default size is os-specific, which does not provide control over your input/output (I/O) operations. Writing to a file with a buffered writer lets you change how much data you write with each call, which means you do not have perform I/O intensive operations like writing line-by-line. 
+
+The Go `bufio` package provides the [`NewWriterSize` function](https://pkg.go.dev/bufio#NewWriterSize) that returns a `bufio.Writer` whose buffer has at least the specified size. You write data with the `bufio.Write` method. This method only writes data when the buffer is full--this means that you must call the `.Flush()` method to write the final chunk of data:
+
+```go
+// open file
+f, err := os.Open(...)
+
+bWriter := bufio.NewWriterSize(f, 1024 * 1024)
+for _, data := contents {
+  _, err = buffedWriter.Write(data)
+  if err != nil { ... }
+}
+
+if err := bWriter.Flush; err != nil {
+	// handle err
+}
+```
+
+### Archive files
 
 Compress files to an `io.Writer` with the [`compress/gzip` package](https://pkg.go.dev/compress/gzip@go1.20.2). You can create a writer with `NewWriter`, and write compressed data to the `io.Writer` argument. Assign the `Name` value to the name of the source file:
 
@@ -226,8 +285,29 @@ if err := out.Close(); err != nil {
 
 https://pkg.go.dev/text/tabwriter#pkg-overview
 
-## Temp files
 
+## Buffers and bytes
+
+Many functions return `[]byte`, so you might have to fill a buffer with data to return.
+
+The `bytes` package contains two types: `Buffer` and `Reader`. The `Buffer` returns a variable size buffer to read and write data. It provides `Write*` methods for `strings`, `runes`, `bytes`, etc.:
+
+```go
+func byteStuff() []bytes {
+    // compose the page using a buffer of bytes to write to a file
+    var buffer bytes.Buffer
+
+    // write html to bytes buffer
+    buffer.WriteString("The first string")
+    buffer.Write([]byte{'T', 'h', 'e', 's', 'e', 'c', 'o', 'n', 'd', 's', 't', 'r', 'i', 'n', 'g'})
+    buffer.WriteString("The last string")
+
+    // return []bytes
+    return buffer.Bytes()
+}
+```
+
+## Temp files
 
 If you need to create a temp file:
 ```go
@@ -256,60 +336,7 @@ l := log.New(io.Writer, "LOGGER PREFIX: ", log.LstdFlags)
 ```
 log.LstdFlags uses the default log flags, such as date and time.
 
-## File operations
 
-#### Get file name
-
-Get the name of the file:
-```go
-name := fileName.Name()
-```
-#### File extension
-
-Return the file extension with `filepath.Ext(file)`:
-```go
-ext := filepath.Ext(file)
-```
-#### Delete a file
-
-Remove a file:
-```go
-if err := os.Remove; err != nil {
-	// handle err
-}
-```
-
-### File metadata
-
-Use [fs.FileInfo](https://pkg.go.dev/io/fs#FileInfo) to examine file metadata, such as the name, length in bytes, if it is a directory, etc. To return the `FileInfo` file attributes for a file, use `os.Stat(filename)`:
-```go
-info, err := os.Stat(fileName)
-if err != nil {
-	// handle error
-}
-```
-
-### Opening a file
-
-To open a file for reading (`O_RDONLY`), use the `Open` function:
-
-```go 
-in, err := os.Open(filename)
-if err != nil {
-	return nil
-}
-```
-
-When you need to do more than read a file, use  `os.OpenFile()`. `os.OpenFile()` accepts flags (`O_APPEND`) so you can perform more actions:
-```go
-f, err = os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-if err != nil {
-    fmt.Fprintln(os.Stderr, err)
-    os.Exit(1)
-}
-// always defer the close
-defer f.Close()
-```
 
 ## Directory paths
 

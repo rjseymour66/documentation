@@ -218,7 +218,47 @@ type passUpdater interface {
 // user
 
 ```
+## Loops
 
+In Go, every loop is a `for` loop:
+
+```go
+for i := 0; i < 5; i++ {
+    // do somthing
+}
+```
+
+Use the `for` keyword where other languages would use `while`:
+
+```go
+for iterator.Next() {}
+for line != lastLine {}
+for !gotResponse || response.invalid() {}
+```
+
+Create an infinite loop with only the `for` keyword:
+
+```go
+for {
+    // loop forever
+}
+```
+
+The `for range` loop iterates over an array, slice, map, or channel using an index and value:
+
+```go
+for index, value := range iterable {
+    // do something
+}
+```
+If you do not need the index, use the blank identifier:
+
+```go
+for _, value := range iterable {
+    // do something
+}
+```
+> The `for range` loop operates on a copy of the value, so do not expect the values to mutate.
 
 ## Arrays
 
@@ -288,7 +328,7 @@ You cannot create a slice with a capacity that's smaller than the length.
 
 ### Create slices 
 
-Create slices using the following methods:
+Name slices with plural words. Create slices using the following methods:
 - `new()` function.
 - `make([]T, len, cap)` function.
 - _Slice literals_. This is the idiomatic way to create slices. It requires that you define the contents when you create the slice.
@@ -454,6 +494,25 @@ for i := 2; i < len(slice); i++ {
     fmt.Printf("index: %d, value: %d", index, slice[i])
 }
 ```
+
+### Sorting slices 
+
+The Go `sort` package has a [`Slice` method](https://pkg.go.dev/sort#Slice) to sort the values in a slice. It compares items a two indices, and returns whether the item at the first index should be placed before the item at the second index.
+
+For example, the following function sorts a slice of type `Book {Author, Title}` first by `Author`, then by `Title`:
+
+```go
+func sortBooks(books []Book) []Book {
+	sort.Slice(books, func(i, j int) bool {
+		if books[i].Author != books[j].Author {
+			return books[i].Author < books[j].Author
+		}
+		return books[i].Title < books[j].Title
+	})
+	return books
+}
+```
+
 ### Passing slices between functions
 
 Pass slices by value, because slices only contain a pointer to the underlying array, its length, and capacity. This is why slices are great--no need for passing pointers.
@@ -504,10 +563,26 @@ colors["Red"] = "#da137"
 var colors map[string]string{}
 
 ```
-### Testing if values exist in a map
 
-Test with the following 2 options:
-1. You can retrieve the value and a flag that explicitly lets you know if the key exists:
+### Finding keys with ok
+
+Maps return Boolean values that indicate whether a key exists in a map. The common Go idiom is to name this Boolean `ok`.
+
+> Map keys must be comparable and hashable. This means you cannot use a slice, map, or function.
+
+The following example searches a map and returns whether the key `"blue"` exists in the map:
+
+```go
+val, ok := mapname["blue"]
+if ok {...}
+
+// compact version
+if val, ok := mapname["blue"]; ok {
+    // ...
+}
+```
+
+Some Go code uses the word `exists` or `found` in place of `ok`:
 ```go
 value, exists := colors["Blue"]
 
@@ -515,9 +590,9 @@ if exists {
     fmt.Println(value)
 }
 ```
-2. Return the value and test for the zero value to determine if the key exists:
+Return the value and test for the zero value to determine if the key if found:
 ```go
-value, exists := colors["Blue"]
+value, found := colors["Blue"]
 
 if value != "" {
     fmt.Println(value)
