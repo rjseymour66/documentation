@@ -5,6 +5,242 @@ description: >
   Working with Databases in Go.
 ---
 
+[golang/go SQLDrivers](https://github.com/golang/go/wiki/SQLDrivers)
+
+## MySQL quickstart
+
+### MySQL service
+
+The MySQL service must be running to access a database. The following commands check the service, restart the service, and then configure the service to start each time the computer boots:
+
+```shell
+# check status
+$ sudo systemctl status mysql
+
+# restart service
+$ sudo systemctl start mysql
+
+# start at boot
+$ sudo systemctl enable mysql
+```
+
+### Access a MySQL database
+
+Access mysql with the mysql CLI utility:
+
+```shell
+$ mysql -u <username> -p <database>;
+```
+
+For details about all connection options, refer to the [documentation](https://dev.mysql.com/doc/refman/8.0/en/connecting.html).
+
+After you access the mysql server, you can view all databases:
+
+```sql
+mysql> create database golang;
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| golang             |
+| grafana            |
+| information_schema |
+| mysql              |
+| performance_schema |
+| sakila             |
+| sys                |
++--------------------+
+7 rows in set (0.00 sec)
+
+mysql> use golang;
+Database changed
+```
+
+### Run SQL script
+
+You can run SQL scripts to easily execute DDL statements:
+
+```shell
+$ mysql> source path/to/script.sql
+```
+
+## MySQL and Go
+
+This section borrows heavily from [Tutorial: Accessing a relational database](https://go.dev/doc/tutorial/database-access). For information about transactions, query cancellation, and connection pools, see [Accessing a relational database](https://go.dev/doc/database/).
+
+### Import the driver
+
+1. Go to [SQLDrivers](https://github.com/golang/go/wiki/SQLDrivers) and locate the [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql/) link.
+2. In the go file that runs SQL code, import the driver. Because you are not using the driver directly, import it with the `blank identifier`:
+   ```go
+   package main
+
+   import "_ github.com/go-sql-driver/mysql"
+   ```
+   If you have not installed the package dependency, run `go get` in the shell:
+   ```shell
+   $ go get -u github.com/go-sql-driver/mysql
+   ```
+
+### Repository pattern
+
+The repository pattern creates an interface between your Go code and the database. It consists of the following components:
+- Custom type that wraps a private database handle. It might include a `sync.RWMutex` to secure read and write operations.
+- A constructor function that initiates and returns a database connection.
+- Public methods that access the database (CRUD).
+
+1. Create the custom type:
+   ```go
+   type mysqlRepo struct {
+	   db *sql.DB
+	   sync.RWMutex
+   }
+   ```
+2. To simplify configuration, create a configuration object with the `mysql` `Config` type. You can add properties to the `Config` type, and then use its `.FormatDSN()` function to return its data source name (DSN):
+   ```go
+   cfg := mysql.Config{
+	   User:   os.Getenv("DBUSER"),
+	   Passwd: os.Getenv("DBPASS"),
+	   Net:    "tcp",
+	   Addr:   "127.0.0.1:3306",
+	   DBName: "database-name",
+   }
+   ```
+3. Create a constructor that accepts the `mysql.Config` as an argument:
+   ```go
+   // NewMySQLRepo returns a MySQL database handle.
+   func NewMySQLRepo(cfg mysql.Config) (*mysqlRepo, error) {
+
+	   // Get the db handle
+	   var err error
+	   db, err := sql.Open("mysql", cfg.FormatDSN())
+	   if err != nil {
+		   log.Fatal(err)
+		   return nil, err
+	   }
+
+	   db.SetConnMaxLifetime(time.Minute * 3)
+	   db.SetMaxOpenConns(10)
+	   db.SetMaxIdleConns(10)
+
+	   // call Ping to confirm the connection
+	   pingErr := db.Ping()
+	   if pingErr != nil {
+		   log.Fatal(pingErr)
+		   return nil, pingErr
+	   }
+
+	   fmt.Println("Connected!")
+
+	   return &mysqlRepo{
+		   db: db,
+	   }, nil
+   }
+   ```
+### Create data
+
+Create (add) data to a database with the `Exec()` function. It returns a `Result` type whose interface defines the following functions:
+- `LastInsertId() (int64, error)`: verify that you added a row.
+- `RowsAffected() (int64, error)`: verify which rows were updated. 
+
+Generally, a `Create*` function should return the id of the newly created row, and an `Update*` function returns an error if no rows were affected.
+
+The following function creates a new `Album` type and adds it to a database called "albums":
+
+```go
+func (r *mysqlRepo) CreateAlbum(alb Album) (int64, error) {
+	r.Lock()
+	defer r.Unlock()
+
+	result, err := r.db.Exec("INSERT INTO album (title, artist, price) VALUES (?, ?, ?)", alb.Title, alb.Artist, alb.Price)
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+	return id, nil
+}
+```
+
+
+### Retrieve data
+
+Query the database with the database handle in the repository struct. In its most basic form, a query that retrieves data must perform the following:
+- Lock the repository with a mutex.
+- Execute a `Query("statement")` that returns one or more `Rows` (defer `rows.Close()`. In the statement, use a `?` character to represent values, and pass the value after the statement parameter. This protects agains SQL injection attacks. 
+- Loop through the returned rows with the `.Scan(columns...)` function. You must pass as parameters pointers to each column returned in rows. 
+- Check if `Query(statement)` returned an error.
+
+#### Query multiple rows
+
+The following function queries a database called "albums" and returns all albums by the specified artist:
+
+```go
+type Album struct {
+	ID     int64
+	Title  string
+	Artist string
+	Price  float32
+}
+
+func (r *mysqlRepo) RetrieveAlbumsByArtist(name string) ([]Album, error) {
+	r.Lock()
+	defer r.Unlock()
+
+	// albums slice to hold data from returned rows
+	var albums []Album
+
+	rows, err := r.db.Query("SELECT * FROM album WHERE artist = ?", name)
+	if err != nil {
+		return nil, fmt.Errorf("RetrieveAlbumsByArtist %q: %v", name, err)
+	}
+	defer rows.Close()
+
+	// Loop through rows, using Scan to assign column data to struct fields.
+	for rows.Next() {
+		var alb Album
+		// pass a pointer to each colum in Album
+		if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Price); err != nil {
+			return nil, fmt.Errorf("RetrieveAlbumsByArtist %q: %v", name, err)
+		}
+		albums = append(albums, alb)
+	}
+
+	// Check if Query returned any errors
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("albumsByArtist %q: %v", name, err)
+	}
+	return albums, nil
+}
+```
+#### Query a single row 
+
+A query for a single row checks errors to determine whether or not the row returned a value or another type of error:
+
+```go
+func (r *mysqlRepo) RetrieveAlbumByID(id int64) (Album, error) {
+	r.Lock()
+	defer r.Unlock()
+
+	// An album to hold data from the returned row.
+	var alb Album
+
+
+	row := r.db.QueryRow("SELECT * FROM album WHERE id = ?", id)
+	if err := row.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Price); err != nil {
+		// return if there were no matching rows
+		if err == sql.ErrNoRows {
+			return alb, fmt.Errorf("albumsById %d: no such album", id)
+		}
+		// return error if there was another error
+		return alb, fmt.Errorf("albumsById %d: %v", id, err)
+	}
+	return alb, nil
+}
+```
+
 
 ## Repository pattern
 
