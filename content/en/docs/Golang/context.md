@@ -2,8 +2,10 @@
 title: "Context"
 weight: 200
 description: >
-  Working with the context pacakge.
+  Working with the context package.
 ---
+
+[Context](https://go.dev/blog/context)
 
 A function that accepts a context should always check if the context is canceled.
 

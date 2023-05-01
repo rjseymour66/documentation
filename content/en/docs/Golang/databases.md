@@ -5,9 +5,16 @@ description: >
   Working with Databases in Go.
 ---
 
-[golang/go SQLDrivers](https://github.com/golang/go/wiki/SQLDrivers)
+## Repository pattern
 
-## MySQL quickstart
+The repository pattern creates an interface between your Go code and the database. It consists of the following structs and functions:
+- Custom type that wraps a private database handle. It might include a `sync.RWMutex` to secure read and write operations.
+- A constructor function that initiates and returns a database connection.
+- Public methods that access the database (CRUD).
+
+## MySQL
+
+[golang/go SQLDrivers](https://github.com/golang/go/wiki/SQLDrivers)
 
 ### MySQL service
 
@@ -56,12 +63,58 @@ mysql> use golang;
 Database changed
 ```
 
-### Run SQL script
+### Initialize the database
+
+When you use a database with an application, you want to initialize the db with the required structure. For large applications, you might need version controlled scripts or migration files to initialize your db. For smaller apps, create a table initialization statement within a `const`:
+
+```go
+const (
+	createTableName string = `CREATE TABLE IF NOT EXISTS "interval" (
+		"id" INTEGER,
+		"start_time" DATETIME NOT NULL,
+		"planned_duration" INTEGER DEFAULT 0,
+		"actual_duration" INTEGER DEFAULT 0,
+		"category" TEXT NOT NULL,
+		"state" INTEGER DEFAULT 1,
+		PRIMARY KEY("id")
+	);`
+)
+```
+The SQLite driver automatically handles conversion between Go types and SQL types.
+
 
 You can run SQL scripts to easily execute DDL statements:
 
 ```shell
 $ mysql> source path/to/script.sql
+```
+Example `script.sql`:
+```sql
+-- This is a comment
+CREATE TABLE IF NOT EXISTS "interval" (
+		"id" INTEGER,
+		"start_time" DATETIME NOT NULL,
+		"planned_duration" INTEGER DEFAULT 0,
+		"actual_duration" INTEGER DEFAULT 0,
+		"category" TEXT NOT NULL,
+		"state" INTEGER DEFAULT 1,
+		PRIMARY KEY("id")
+	);
+```
+Alternately, you can model SQL statements as a `const`:
+
+```go
+const (
+	createTableName string = `CREATE TABLE IF NOT EXISTS "interval" (
+		"id" INTEGER,
+		"start_time" DATETIME NOT NULL,
+		"planned_duration" INTEGER DEFAULT 0,
+		"actual_duration" INTEGER DEFAULT 0,
+		"category" TEXT NOT NULL,
+		"state" INTEGER DEFAULT 1,
+		PRIMARY KEY("id")
+	);`
+)
 ```
 
 ## MySQL and Go
@@ -82,12 +135,9 @@ This section borrows heavily from [Tutorial: Accessing a relational database](ht
    $ go get -u github.com/go-sql-driver/mysql
    ```
 
-### Repository pattern
+### Create the repository
 
-The repository pattern creates an interface between your Go code and the database. It consists of the following components:
-- Custom type that wraps a private database handle. It might include a `sync.RWMutex` to secure read and write operations.
-- A constructor function that initiates and returns a database connection.
-- Public methods that access the database (CRUD).
+Implement the [respository pattern](#repository-pattern):
 
 1. Create the custom type:
    ```go
@@ -240,39 +290,6 @@ func (r *mysqlRepo) RetrieveAlbumByID(id int64) (Album, error) {
 	return alb, nil
 }
 ```
-
-
-## Repository pattern
-
-The repository pattern is an interface to access data storage while decoupling your business login from your storage implementation.
-
-The Repository Pattern requires two components:
-1. An interface that specifies all the methods that a given type must implement to qualify as a repository for the application. Define this interface in the same package that you use it.
-2. A custom type that implements that interface working as the repository. Make the type and its fields private so callers can access it only through the interface methods.
-
-For example, the following 
-
-### Connecting to a database
-
-Connect to a SQL database using the [`database/sql`](https://pkg.go.dev/database/sql). You also need access to the database driver, which works with the `database/sql` package to implemet the details to interface with the database engine.
-
-When you use a database with an application, you want to initialize the db with the required structure. For large applications, you might need version controlled scripts or migration files to initialize your db. For smaller apps, create a table initialization statement within a `const`:
-
-```go
-const (
-	createTableName string = `CREATE TABLE IF NOT EXISTS "interval" (
-		"id" INTEGER,
-		"start_time" DATETIME NOT NULL,
-		"planned_duration" INTEGER DEFAULT 0,
-		"actual_duration" INTEGER DEFAULT 0,
-		"category" TEXT NOT NULL,
-		"state" INTEGER DEFAULT 1,
-		PRIMARY KEY("id")
-	);`
-)
-```
-The SQLite driver automatically handles conversion between Go types and SQL types.
-
 ## SQLite
 
 SQLite databases are a single file with the .db extension. Saving the entire database in a file makes it more portable.

@@ -568,6 +568,8 @@ The select statement is similar to a switch statement. It blocks execution of th
 
 ### Pipelines
 
+[Go concurrency patterns: Pipelines and cancellation](https://go.dev/blog/pipelines)
+
 A pipeline is an extensible and efficient design pattern composed of concurrent stages. Each stage in the pipeline modifies data, then sends it to the next stage (channel) in the pipeline.
 
 #### Orchestrator function pattern
