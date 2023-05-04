@@ -10,7 +10,43 @@ The `net/http` package provides the `ListenAndServer()` function that creates a 
 
 ## Writing a server
 
-Go provides the `Server` type and the `Handler` type. `Server` listens on a port for client requests and then passes the request in a goroutine to a `Handler` type. The `Handler` type 
+There are two important concepts that are central to creating a custom server in Go:
+- `Server` type: listens for client connections and routes incoming requests in a goroutine to a type that implements the `Handler` interface.
+- `Handler` interface: contains one method, `ServeHTTP(ResponseWriter, *Request)`.
+
+You can create a server with any type as long as it implements `Handler` interface. A server should have the following:
+- One or more registered routes with an associated function to handle requests to that route.
+- A server multiplexer that can manage multiple registered routes.
+
+### Define the custom Server type
+
+The `Server` type must implement the `Handler` interface, so embed the `Handler` interface in the Server type:
+
+```go
+type mux http.Handler
+
+type Server struct {
+	mux
+}
+```
+Interface embedding elevates the interface methods to the containing type, so the `Server` implements the `Handler`'s `ServeHTTP` method.
+
+### Define routes
+
+Create `const` values that define the routes that your server will handle. This server will handle `/json` and `/health` routes:
+
+```go
+const (
+	jsonRoute = "/json"
+	healthCheckRoute = "/health"
+)
+```
+
+### Register routes
+
+
+
+## Existing docs
 
 ### Custom servers
 
