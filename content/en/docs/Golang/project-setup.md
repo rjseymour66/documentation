@@ -5,6 +5,29 @@ description: >
   Setting up a Go project.
 ---
 
+
+## Requirements analysis
+
+### Functional requirements
+
+_Functional requirements_ is a list of the core functionalities that the system is expected to implement and how the actors (users, other system components or services) interact with it. To establish the functional requirements, you must write _user stories_.
+
+User stories describe business value and include a list of acceptance criteria that acts as a verification tool that each goal is met.
+
+#### User story template
+
+As an _`actor`_, I need to be able to _`short requirement`_, so as to _`reason/business value`_.
+
+The acceptance criteria for this user story are as follows:
+- _`acceptance criteria 1`_
+- _`acceptance criteria 2`_
+- ...
+
+### Non-functional requirements
+_Non-functional requirements_ include items like _service-level objectives_ (SLOs) and capacity and scalability requirements.
+
+To 
+
 ## Makefile
 
 Create a Makefile at the base of your project to manage project tasks, builds, and dependencies. A Makefile consists of targets, which are tasks that you can run by entering `make target-name`.

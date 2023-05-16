@@ -47,7 +47,7 @@ A suggested server directory structure:
 ```shell
 .
 ├── cmd
-│   └── serverdir
+│   └── server
 │       └── server.go
 ├── internal
 │   └── helpers
@@ -55,10 +55,10 @@ A suggested server directory structure:
 │       └── helpers.go
 ├── errors
 │   └── errors.go
-└── server-name
+└── service-name
     ├── server.go
     ├── server_test.go
-    └── app.go
+    └── service.go
 
 ```
 
@@ -66,9 +66,9 @@ In the preceding example:
 - `cmd/serverdir/server.go` contains the `main` method. This is where you create a logger and execute the server's `ListenAndServe()` method.
 - `internal/helpers/*` contains private code such as JSON formatters and handlers for the handler chaining pattern.
 - `errors/errors.go` contains custom errors.
-- `server-name/server.go` contains the custom server implementation, including the constructor, routes, etc.
-- `server-name/server_test.go` tests `server.go` with the `httptest.NewRecorder()` method.
-- `server-name/app.go` contains the server's business logic.
+- `server-name/server.go` contains the service's server implementation, including the constructor, routes, etc.
+- `service-name/server_test.go` tests `server.go` with the `httptest.NewRecorder()` method.
+- `server-name/service.go` contains the service's business logic.
 
 
 
@@ -121,7 +121,7 @@ func (s *Server) registerRoutes() {
 }
 ```
 
-> All route handlers should end with `*Handler`.
+> All route handlers should end with `Handler`. For example, `loginHandler`.
 
 #### /health handler
 
@@ -209,7 +209,15 @@ func NewServer() *Server {
    }   
    ```
 
+## Static files
 
+To server static files (files that the server does not process), you have to create a `Handler` with the `FileServer()` function. Then, register the `Handler` in the multiplexer:
+
+```go
+staticFiles := http.FileServer(http.Dir("/public"))
+mux.Handle("/static", http.StripPrefix("/static", staticFiles))
+```
+The preceding example creates a `Handler` named `staticFiles` that serves HTTP requests with the contents of the `/public` directory. When you register the `staticFiles`, you are telling the multiplexer that when there is a request to the `/static` path, strip `/static` from the request URL, and then search the `/public` directory for a file that matches the request.
 
 ## Existing docs
 
