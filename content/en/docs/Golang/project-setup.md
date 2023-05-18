@@ -157,6 +157,8 @@ go mod init <project-name>
 ```
 The preceding command creates a `go.mod` file in the top-level of your project that lists your project name at the top.
 
+Module names should be unique within the Go community. This prevents conflicts with other public libraries. A common pattern is to use a URL that you own, such a `project-name.example.com`. Another very common pattern is to use the path where the project exists, minus the scheme. For example, `github.com/username/projectname`.
+
 ## Packages
 
 Packages are directories in a Go project. A package name should describe what it provides, not what it does. The name of the directory is the package name. For example, source files in the `go-src/stocks/` package are in the `stocks` package. At the top of the file, declare package names with `package <package-name>`, and import packages with the `import <package-name>` statement.

@@ -96,6 +96,14 @@ Interface embedding elevates the interface methods to the containing type, so th
 
 ### Define routes
 
+By default, Go supports two types of URL patterns:
+
+_fixed path `/path/endpoint`_
+: A fixed path does not have a trailing slash (`/`). A request must match a fixed path exactly.
+
+_subtree path `/path/bucket/`_
+: A subtree path has a trailing slash. A request must match only the start of the subtree path. Think of subtree paths with a wildcard appended. For example, `/path/bucket/*`.
+
 This server will have the following routes:
 
 - `/json`: accepts a request in key-value pairs, and returns the request in JSON format.
@@ -183,18 +191,21 @@ func NewServer() *Server {
    ```bash
    mkdir -p cmd/server/server.go
    ```
-1. In the `main` method, define the `address` that the server listens on, and a `timeout` duration. The `timeout` makes the server return after `timeout` seconds if the response is not complete:
+1. In the `main` method, define the `address` that the server listens on in `host:port` format. If you provide only the `port`, then the server listens on all available network interfaces. This means that `host` is important only if your machine has multiple network interfaces.
+   
+   Additionally, define a `timeout` duration. The `timeout` makes the server return after `timeout` seconds if the response is not complete:
    ```go
    const (
        addr    = "localhost:8080"
 	   timeout = 10 * time.Second
    )
    ```
-1. Create a new multiplexer server:
+   > In some circumstances, you will see `:http` or `:http-alt` in place of a port number. This means the server looks up the port number in the `etc/services` file.
+2. Create a new multiplexer server:
    ```go
    server := server.NewServer()
    ```
-1. Create the server. Assign the `address` and `timeout` variables. For `Handler`, use `TimeoutHandler` so you can assign the timeout value:
+3. Create the server. Assign the `address` and `timeout` variables. For `Handler`, use `TimeoutHandler` so you can assign the timeout value:
    ```go
    server := &http.Server{
 	   Addr:        addr,
@@ -202,7 +213,7 @@ func NewServer() *Server {
 	   ReadTimeout: timeout, // max time for reading the entire request
    }
    ```
-1. Start the server. The normal behavior for stopping a server returns the `http.ErrServerClosed` error, so check for that error and return a message:
+4. Start the server. The normal behavior for stopping a server returns the `http.ErrServerClosed` error, so check for that error and return a message:
    ```go
    if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 	   fmt.Fprintln(os.Stderr, "server closed unexpectedly:", err)
@@ -218,6 +229,57 @@ staticFiles := http.FileServer(http.Dir("/public"))
 mux.Handle("/static", http.StripPrefix("/static", staticFiles))
 ```
 The preceding example creates a `Handler` named `staticFiles` that serves HTTP requests with the contents of the `/public` directory. When you register the `staticFiles`, you are telling the multiplexer that when there is a request to the `/static` path, strip `/static` from the request URL, and then search the `/public` directory for a file that matches the request.
+
+
+## Requests
+
+
+
+## Responses
+
+Responses are made with the `http.ResponseWriter` interface, which is usually represented with a `w`. Go provides the following headers automatically:
+- `Date`
+- `Content-Length`
+- `Content-Type` (see w.Header().Set())
+
+_http.Error(writer, error message, status code)_
+: Writes an error message on the writer. 
+
+_w.Header().Set(`header-name`, `header-value`)_
+: Adds a custom header to the HTTP response in the `header-name`:`header-value` format. A common example is setting the `Content-Type` header when you send JSON data:
+
+```go
+w.Header().Set("Content-Type", "application/json")
+```
+You must write the `w.Header().Set()`method before `w.WriteHeader()` or `w.Write()`.
+
+_w.WriteHeader(`status-code`)_
+: Writes a status code to the response. You should call this method only once.
+
+  If you do not call this method before `w.Write([]bytes())`, then the `Write` method returns a `200 OK` status code automatically.
+
+  `w.WriteHeader` is not commonly used. You usually pass the writer (`w`) value to an `http` package helper function.
+
+_http.NotFound(w, r)_
+: Replies with a `404 Not Found` status code.
+
+### Constants
+
+The `http` package provides [constants](https://pkg.go.dev/net/http#pkg-constants) for request methods and status code. These constants improve readability and reduce runtime errors that result from typos. For example:
+
+```go
+func snippetCreate(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Write([]byte("Create a new snippet..."))
+}
+```
+
+
 
 ## Existing docs
 
