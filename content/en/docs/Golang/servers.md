@@ -233,17 +233,28 @@ The preceding example creates a `Handler` named `staticFiles` that serves HTTP r
 
 ## Requests
 
+### URL query strings
+
 
 
 ## Responses
 
-Responses are made with the `http.ResponseWriter` interface, which is usually represented with a `w`. Go provides the following headers automatically:
+Responses are made with the `http.ResponseWriter` interface, which is usually represented with a `w`.
+
+_http.Error(writer, error message, status code)_
+: Writes an error message on the writer.
+
+
+_http.NotFound(w, r)_
+: Replies with a `404 Not Found` status code.
+
+
+### Headers
+
+Go provides the following headers automatically:
 - `Date`
 - `Content-Length`
 - `Content-Type` (see w.Header().Set())
-
-_http.Error(writer, error message, status code)_
-: Writes an error message on the writer. 
 
 _w.Header().Set(`header-name`, `header-value`)_
 : Adds a custom header to the HTTP response in the `header-name`:`header-value` format. A common example is setting the `Content-Type` header when you send JSON data:
@@ -260,8 +271,6 @@ _w.WriteHeader(`status-code`)_
 
   `w.WriteHeader` is not commonly used. You usually pass the writer (`w`) value to an `http` package helper function.
 
-_http.NotFound(w, r)_
-: Replies with a `404 Not Found` status code.
 
 ### Constants
 
