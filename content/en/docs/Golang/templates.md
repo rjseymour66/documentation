@@ -115,10 +115,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-### Partials
+## Partials
 
 A partial is a smaller template component that you might reuse in multiple pages. For example, a navigation bar.
 
-### Blocks
+## Blocks
 
 A block is a template that can include default content if the page invokes a template that is not in the executed template set.

@@ -222,13 +222,25 @@ func NewServer() *Server {
 
 ## Static files
 
-To server static files (files that the server does not process), you have to create a `Handler` with the `FileServer()` function. Then, register the `Handler` in the multiplexer:
+
+
+To server static files (files that the server does not process), you have to create a `Handler` with the `FileServer()` function. The `FileServer()` handler serves HTTP requests with the files stored in the path that you pass as a function argument:
 
 ```go
 staticFiles := http.FileServer(http.Dir("/public"))
+```
+
+When you register the file server handle, you have to strip the path pattern from the request URL, or the server attempts to serve files from an invalid path and returns a 404:
+
+
+```go
 mux.Handle("/static", http.StripPrefix("/static", staticFiles))
 ```
-The preceding example creates a `Handler` named `staticFiles` that serves HTTP requests with the contents of the `/public` directory. When you register the `staticFiles`, you are telling the multiplexer that when there is a request to the `/static` path, strip `/static` from the request URL, and then search the `/public` directory for a file that matches the request.
+The preceding examples create a `Handler` named `staticFiles` that serves HTTP requests with the contents of the `/public` directory. When you register the `staticFiles`, you are telling the multiplexer that when there is a request to the `/static` path, strip `/static` from the request URL, and then search the `/public` directory for a file that matches the request.
+
+### Directory listings
+
+After you create a file server, users can access the static files in a browser by going to `/static/path/to/assets/`. To disable this, create a blank `index.html` file in each subdirectory in the `/static/` directory.
 
 
 ## Requests
