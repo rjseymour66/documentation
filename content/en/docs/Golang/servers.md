@@ -30,6 +30,115 @@ type Server struct {
 }
 ```
 
+## HTTP handlers
+
+Servers receive requests, dispatch those requests to the handler that is registered to the receiving path, and the handler sends a response. In Go, each incoming request is served in its own goroutine, which means each request is handled concurrently.
+
+You create the server, then use `HandleFunc` to register routes to handler functions. Then you use `HandlerFunc` to define the handler function for the route.
+
+- `http.Handler` is an interface that has the `ServeHTTP(w ResponseWriter, r *Request)` signature.
+- `http.HandlerFunc` is an adapter type that lets you define ordinary functions as HTTP handlers. It adds a `ServerHTTP(w, r)` method to whatever function you pass it.
+- `http.HandleFunc` registers a handler with a multiplexer server. It is syntactic sugar--it transforms a function to a handler and registers it in one step. It accepts two arguments: the path as a `string`, and the handler function. It implements `ServeHTTP()`.
+- `http.NewServeMux()` returns a custom server. It implements `ServeHTTP()`.
+
+The following example registers the `homeHandler` twice, but each method is functionally equivalent:
+
+```go
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	// handler logic 
+}
+
+func main() {
+	...
+	mux.Handle("/", http.HandlerFunc(homeHandler))
+	mux.HandleFunc("/", homeHandler)
+}
+```
+
+
+## Requests
+
+### URL query strings
+
+Sometimes requests pass information as key-value pairs in the URL:
+
+```
+http://localhost:4000/snippet/view?id=123
+```
+The values after the `?` are _query strings_, and they take the form of `key`=`value`. You can access the `key` portion of the query string and retrieve the `value`:
+
+```go
+id, err := r.URL.Query().Get("id")
+```
+
+The proceeding example uses the `Query()` method on the request's `URL` field. `Query()` returns a `Values` type, which has method `Get()` that can return a `string` value associated with the `key` provided to `Get()`.
+
+
+## Responses
+
+Responses are made with the `http.ResponseWriter` interface, which is usually represented with a `w`.
+
+It is common to use `fmt.Fprintf()` to write a response: 
+
+```go
+fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+```
+
+_http.Error(writer, error message, status code)_
+: Writes an error message on the writer. You can use helper methods like `http.StatusText`. For example:
+
+```go
+http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+``` 
+
+
+_http.NotFound(w, r)_
+: Replies with a `404 Not Found` status code.
+
+
+
+
+### Headers
+
+Go provides the following headers automatically:
+- `Date`
+- `Content-Length`
+- `Content-Type` (see w.Header().Set())
+
+_w.Header().Set(`header-name`, `header-value`)_
+: Adds a custom header to the HTTP response in the `header-name`:`header-value` format. A common example is setting the `Content-Type` header when you send JSON data:
+
+```go
+w.Header().Set("Content-Type", "application/json")
+```
+You must write the `w.Header().Set()`method before `w.WriteHeader()` or `w.Write()`.
+
+_w.WriteHeader(`status-code`)_
+: Writes a status code to the response. You should call this method only once.
+
+  If you do not call this method before `w.Write([]bytes())`, then the `Write` method returns a `200 OK` status code automatically.
+
+  `w.WriteHeader` is not commonly used. You usually pass the writer (`w`) value to an `http` package helper function.
+
+
+### Constants
+
+The `http` package provides [constants](https://pkg.go.dev/net/http#pkg-constants) for request methods and status code. These constants improve readability and reduce runtime errors that result from typos. For example:
+
+```go
+func snippetCreate(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Write([]byte("Create a new snippet..."))
+}
+```
+
+
+
 ## Writing a basic server
 
 There are two important concepts that are central to creating a custom server in Go:
@@ -243,84 +352,6 @@ The preceding examples create a `Handler` named `staticFiles` that serves HTTP r
 After you create a file server, users can access the static files in a browser by going to `/static/path/to/assets/`. To disable this, create a blank `index.html` file in each subdirectory in the `/static/` directory.
 
 
-## Requests
-
-### URL query strings
-
-Sometimes requests pass information as key-value pairs in the URL:
-
-```
-http://localhost:4000/snippet/view?id=123
-```
-The values after the `?` are _query strings_, and they take the form of `key`=`value`. You can access the `key` portion of the query string and retrieve the `value`:
-
-```go
-id, err := r.URL.Query().Get("id")
-```
-
-The proceeding example uses the `Query()` method on the request's `URL` field. `Query()` returns a `Values` type, which has method `Get()` that can return a `string` value associated with the `key` provided to `Get()`.
-
-
-## Responses
-
-Responses are made with the `http.ResponseWriter` interface, which is usually represented with a `w`.
-
-It is common to use `fmt.Fprintf()` to write a response: 
-
-```go
-fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
-```
-
-_http.Error(writer, error message, status code)_
-: Writes an error message on the writer.
-
-
-_http.NotFound(w, r)_
-: Replies with a `404 Not Found` status code.
-
-
-
-
-### Headers
-
-Go provides the following headers automatically:
-- `Date`
-- `Content-Length`
-- `Content-Type` (see w.Header().Set())
-
-_w.Header().Set(`header-name`, `header-value`)_
-: Adds a custom header to the HTTP response in the `header-name`:`header-value` format. A common example is setting the `Content-Type` header when you send JSON data:
-
-```go
-w.Header().Set("Content-Type", "application/json")
-```
-You must write the `w.Header().Set()`method before `w.WriteHeader()` or `w.Write()`.
-
-_w.WriteHeader(`status-code`)_
-: Writes a status code to the response. You should call this method only once.
-
-  If you do not call this method before `w.Write([]bytes())`, then the `Write` method returns a `200 OK` status code automatically.
-
-  `w.WriteHeader` is not commonly used. You usually pass the writer (`w`) value to an `http` package helper function.
-
-
-### Constants
-
-The `http` package provides [constants](https://pkg.go.dev/net/http#pkg-constants) for request methods and status code. These constants improve readability and reduce runtime errors that result from typos. For example:
-
-```go
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	w.Write([]byte("Create a new snippet..."))
-}
-```
-
-
 
 ## Existing docs
 
@@ -351,31 +382,6 @@ A multiplexer maps incoming requests to the proper handler functions using the r
 - The default registers routes globally.
 - You can add dependencies to the routes.
 - Custom multiplexers allow integration testing
-
-### HTTP handlers
-
-Servers receive requests, dispatch those requests to the handler that is registered to the receiving path, and the handler sends a response. In Go, each incoming request is served in its own goroutine, which means each request is handled concurrently.
-
-You create the server, then use `HandleFunc` to register routes to handler functions. Then you use `HandlerFunc` to define the handler function for the route.
-
-- `http.Handler` is an interface that has the `ServeHTTP(w ResponseWriter, r *Request)` signature.
-- `http.HandlerFunc` is an adapter type that lets you define ordinary functions as HTTP handlers. It adds a `ServerHTTP(w, r)` method to whatever function you pass it.
-- `http.HandleFunc` registers a handler with a multiplexer server. It is syntactic sugar--it transforms a function to a handler and registers it in one step. It accepts two arguments: the path as a `string`, and the handler function. It implements `ServeHTTP()`.
-- `http.NewServeMux()` returns a custom server. It implements `ServeHTTP()`.
-
-The following example registers the `homeHandler` twice, but each method is functionally equivalent:
-
-```go
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	// handler logic 
-}
-
-func main() {
-	...
-	mux.Handle("/", http.HandlerFunc(homeHandler))
-	mux.HandleFunc("/", homeHandler)
-}
-```
 
 ### Router functions
 

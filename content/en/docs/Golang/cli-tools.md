@@ -67,7 +67,14 @@ lang := flag.String("lang", "en", "The required...")
 
 flag.Parse()
 ```
-Now, you have a variable `lines` that stores the address of a `bool` set to `false`. When a user includes the `-l` flag in the CLI invocation, `lines` is set to true. For `lang := flag.String(...)`, the variable stores the string that the user enters after the `-lang` flag.
+Now, you have a variable `lines` that stores the address of a `bool` set to `false`. When a user includes the `-l` flag in the CLI invocation, `lines` is set to true. The following two Boolean flags are functionally equivalent:
+
+```go
+$ go run ./example -flag=true
+$ go run ./example -flag
+```
+
+For `lang := flag.String(...)`, the variable stores the string that the user enters after the `-lang` flag.
 
 You do not have to define a `help` flag--Go provides the `-h` flag by default.
 

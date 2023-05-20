@@ -270,3 +270,45 @@ Code in the `/internal` directory cannot be imported by external projects.
 
 `/ui`
 : User-interface assets for the web app, including templates and static files (CSS, Javascript).
+
+### Configuration with CLI flags
+
+Add flags to manage environment configurations. CLI flags are easier to manage, have default values, and have built-in help.
+
+If you plan to use environment variables, you can pass the env vars to the flag:
+
+```go
+$ export ENV_VAR="value"
+$ go run ./example -addr=$ENV_VAR
+```
+This prevents you from relying on env vars in your code and needing to convert the values from string to the flag type. The `flag` package handles those conversions themselves.
+
+## Dependency injection
+
+**Definition here**
+
+In web applications, handlers need access to multiple dependencies. The easiest way to do that is to inject the dependencies with structs:
+
+```go
+type application struct {
+	logger: *log.logger
+	db:     *sql.DB
+	cache:  *cache
+}
+```
+
+Then, you can initialize your app in the main method, and _inject_ any dependencies in the new `application` object at runtime:
+
+```go
+func main() {
+	// instantiate myLogger
+	// mySQLHandle db config
+	// instantiate myCache
+
+	app := &application {
+		logger: myLogger,
+		db:     mySQLHandle,
+		cache:  myCache,
+	}
+}
+```

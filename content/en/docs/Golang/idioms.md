@@ -173,4 +173,6 @@ func (hl *HostsList) Add(host string) error {
 }
 ```
 
-The comma, ok idiom checks whether a value is in a map (??????)
+## Fatal and Panic
+
+You should call `Fatal()` and `Panic()` from the `main` method only. Return errors in other areas of the application.
