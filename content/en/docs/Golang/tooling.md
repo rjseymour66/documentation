@@ -27,7 +27,12 @@ $ go test -v ./cmd/
 
 # go get for dependencies
 $ go get github.com/entire/module/path
-$ cd <project-root dir>
+$ go get -u github.com/entire/module/path         # upgrade to latest minor version or patch
+$ go get -u github.com/entire/module/path@v2.0.0  # upgrade to specific version
+$ go get github.com/entire/module/path@none       # remove unused package (same as 'go mod tidy -v')
+
+# After go get, update dependencies
+$ cd <project-root>
 $ go mod tidy
 ```
 
@@ -40,7 +45,9 @@ Go sum records the checksum for each module in the application to ensure that ea
 Go modules are tracked in `go.mod`. Update the `go.mod` file with [mod commands](https://go.dev/ref/mod#mod-commands):
 
 ```shell
-$ go mod tidy                 # reconcile project dependencies
+$ go mod tidy [-v]            # reconcile project dependencies
+$ go mod verify               # verifies the checksums in go.sum match the downloaded packages on your machine
+
 $ go list                     # list project packages
 $ go list -m                  # list project modules
 ```
