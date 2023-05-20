@@ -354,14 +354,28 @@ A multiplexer maps incoming requests to the proper handler functions using the r
 
 ### HTTP handlers
 
-Handlers handle a request and responds to it. An object of type `Handler` satisfies the `Handler` field in a custom HTTP server.
+Servers receive requests, dispatch those requests to the handler that is registered to the receiving path, and the handler sends a response. In Go, each incoming request is served in its own goroutine, which means each request is handled concurrently.
 
 You create the server, then use `HandleFunc` to register routes to handler functions. Then you use `HandlerFunc` to define the handler function for the route.
 
 - `http.Handler` is an interface that has the `ServeHTTP(w ResponseWriter, r *Request)` signature.
-- `http.HandlerFunc` is an adapter type that lets you define ordinary functions as HTTP handlers. It implements `ServeHTTP()`.
-- `http.HandleFunc` registers a handler with a multiplexer server. It accepts two arguments: the path as a `string`, and the handler function. It implements `ServeHTTP()`.
+- `http.HandlerFunc` is an adapter type that lets you define ordinary functions as HTTP handlers. It adds a `ServerHTTP(w, r)` method to whatever function you pass it.
+- `http.HandleFunc` registers a handler with a multiplexer server. It is syntactic sugar--it transforms a function to a handler and registers it in one step. It accepts two arguments: the path as a `string`, and the handler function. It implements `ServeHTTP()`.
 - `http.NewServeMux()` returns a custom server. It implements `ServeHTTP()`.
+
+The following example registers the `homeHandler` twice, but each method is functionally equivalent:
+
+```go
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	// handler logic 
+}
+
+func main() {
+	...
+	mux.Handle("/", http.HandlerFunc(homeHandler))
+	mux.HandleFunc("/", homeHandler)
+}
+```
 
 ### Router functions
 
