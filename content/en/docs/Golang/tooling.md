@@ -13,7 +13,8 @@ $ gofmt -l dirname/*.go # lists files in dir that do not conform to go formattin
 
 # go run
 $ go run .                    # runs binary in cwd
-$ $ go run <binary-name>
+$ go run <binary-name>
+$ go run ./cmd/web            # runs proj-root/cmd/web/main.go
 
 # go build
 $ go build                    # uses module name for binary name

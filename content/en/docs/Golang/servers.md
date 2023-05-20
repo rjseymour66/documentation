@@ -235,11 +235,29 @@ The preceding example creates a `Handler` named `staticFiles` that serves HTTP r
 
 ### URL query strings
 
+Sometimes requests pass information as key-value pairs in the URL:
+
+```
+http://localhost:4000/snippet/view?id=123
+```
+The values after the `?` are _query strings_, and they take the form of `key`=`value`. You can access the `key` portion of the query string and retrieve the `value`:
+
+```go
+id, err := r.URL.Query().Get("id")
+```
+
+The proceeding example uses the `Query()` method on the request's `URL` field. `Query()` returns a `Values` type, which has method `Get()` that can return a `string` value associated with the `key` provided to `Get()`.
 
 
 ## Responses
 
 Responses are made with the `http.ResponseWriter` interface, which is usually represented with a `w`.
+
+It is common to use `fmt.Fprintf()` to write a response: 
+
+```go
+fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+```
 
 _http.Error(writer, error message, status code)_
 : Writes an error message on the writer.
@@ -247,6 +265,8 @@ _http.Error(writer, error message, status code)_
 
 _http.NotFound(w, r)_
 : Replies with a `404 Not Found` status code.
+
+
 
 
 ### Headers

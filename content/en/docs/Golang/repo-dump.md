@@ -328,31 +328,6 @@ func mockCmd(exe string, args ...string) *exec.Cmd {
 
 
 
-### Templates
-
-Templates can write dynamic webpages, config files, emails, etc. These are the general steps:
-
-1. Parse the contents of a template file:
-    ```go
-    t, err = template.ParseFiles(templateFile)
-    ```
-2. Create a struct that contains the content to inject into the template. The following struct injects the title and body of a webpage:
-    ```go
-    c := content {
-        Title: "This is the title",
-        Body:  "This is the body text",
-    }
-    ```
-3. Execute the template, and write the executed template into a writer, such as a buffer:
-    ```go
-    if err := t.Execute(&buffer, c); err != nil {
-        return nil, error
-    }
-    ```
-4. Return or use the buffer somehow.
-
-
-
 
 
 ## Signals

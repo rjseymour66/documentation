@@ -204,15 +204,16 @@ import "github.com/rjs/url-parser/parser"
 
 ## Project structure
 
-```
+
+```shell
 .
 ├── cmd 
 │   └── todo
-│       ├── main.go         // config, parse, switch {} flags
-│       └── main_test.go    // integration tests (user interaction)
+│       ├── main.go         # config, parse, switch {} flags
+│       └── main_test.go    # integration tests (user interaction)
 ├── go.mod
-├── todo.go                 // API logic for flags
-└── todo_test.go            // unit tests
+├── todo.go                 # API logic for flags
+└── todo_test.go            # unit tests
 
 ```
 
@@ -240,3 +241,32 @@ hit-tool
 └── hit         # Library directory
 
 ```
+
+### Web applications
+
+Web app structure separates the Go code and the web assets to simplify building and deploying. 
+
+```shell
+.
+├── cmd
+│   └── web
+│       ├── handlers.go
+│       └── main.go
+├── go.mod
+├── internal
+├── README.md
+└── ui
+    ├── html
+    └── static
+
+```
+
+`/cmd`
+: Application-specific code for executables.
+
+`/internal`
+: Non-application-specific code, including reusable code like validation helpers and SQL database models.
+Code in the `/internal` directory cannot be imported by external projects.
+
+`/ui`
+: User-interface assets for the web app, including templates and static files (CSS, Javascript).
