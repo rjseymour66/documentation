@@ -312,3 +312,12 @@ func main() {
 	}
 }
 ```
+
+## Web app checklist
+
+
+Plan your routes:
+
+| Method | Pattern | Handler | Action |
+|:-------|:--------|:--------|:-------|
+|  |  |  |

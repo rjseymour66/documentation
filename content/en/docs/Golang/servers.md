@@ -95,9 +95,6 @@ http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusIntern
 _http.NotFound(w, r)_
 : Replies with a `404 Not Found` status code.
 
-
-
-
 ### Headers
 
 Go provides the following headers automatically:
@@ -136,6 +133,8 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Create a new snippet..."))
 }
 ```
+
+## Routers
 
 
 
