@@ -62,6 +62,8 @@ if err != nil {
 
 ## Wrap errors
 
+For additional details, see the [Go docs](https://go.dev/blog/go1.13-errors#wrapping-errors-with-w).
+
 For errors, use `%w` to decorate the original error with additional information for the users. Essentially, you can customize the error message while also returning the default Go error:
 ```go
 if err != nil {
