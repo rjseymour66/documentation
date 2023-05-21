@@ -352,6 +352,185 @@ The preceding examples create a `Handler` named `staticFiles` that serves HTTP r
 After you create a file server, users can access the static files in a browser by going to `/static/path/to/assets/`. To disable this, create a blank `index.html` file in each subdirectory in the `/static/` directory.
 
 
+## Middleware
+
+> The following sections detail how to create, register, and chain middlewares with Go's standard library. You can use the [justinas/alice](https://github.com/justinas/alice) package to simplify middleware code.
+
+Middleware is code that executes on a request before or after your handlers. It is functionality that you want to share among your HTTP request handlers. For example:
+- Logging
+- Response compression
+- Serving files from a cache
+
+You chain middleware. After one middleware function executes, it calls the `ServeHTTP()` method on the next handler until a response returns.
+
+Middleware uses the following pattern:
+
+```go
+func myMiddleware(next http.Handler) http.Handler {
+    fn := func(w http.ResponseWriter, r *http.Request) {
+        // TODO: Execute our middleware logic here...
+        next.ServeHTTP(w, r)
+    }
+
+    return http.HandlerFunc(fn)
+}
+```
+
+The pattern does the following:
+- `myMiddleware` wraps the `next` handler that you pass as an argument.
+- `fn` is a closure that has access to any values in the `next` handler's scope. It returns `next.ServerHTTP()`.
+- `myMiddleware` converts the closure to a handler and returns.
+
+This pattern can be simplified as follows:
+
+```go
+func myMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // TODO: Execute our middleware logic here...
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+### Positioning
+
+If you want the middleware to execute on all requests, place it before the server mux:
+
+```
+myMiddleware -> mux -> handler
+```
+If you want the middleware to execute on a specific request, place it after the server mux, but before the request handler:
+
+```
+mux -> myMiddleware -> handler
+```
+
+### Security headers
+
+Create a new `/cmd/web/middleware.go` file and add a middleware function that adds secure headers to each request:
+
+```go
+func secureHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com")
+		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "deny")
+		w.Header().Set("X-XSS-Protections", "0")
+
+		next.ServeHTTP(w, r)
+	})
+}
+```
+The previous example adds these headers:
+- [Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) (CSP) retricts the resources that you site can access.
+  > During development, CSP headers are a common cause of blocked resource loads.
+- [Referrer-Policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) includes the site URL in a `Referrer` header when users navigate away from your site.
+- [X-Content-Type-Options: nosniff](https://security.stackexchange.com/questions/7506/using-file-extension-and-mime-type-as-output-by-file-i-b-combination-to-dete/7531#7531) prevents content-sniffing attacks.
+- [X-Frame-Options: deny](https://developer.mozilla.org/en-US/docs/Web/Security/Types_of_attacks#click-jacking) prevents clickjacking in old browsers that do not support CSP.
+- [X-XSS-Protection: 0](https://owasp.org/www-project-secure-headers/#x-xss-protection) disables blocking of cross-site scripting attacks because we are using CSP headers.
+
+### Request logging
+
+Log all requests before they are dispatched to a handler:
+
+```go
+func (app *application) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.infoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+
+		next.ServeHTTP(w, r)
+	})
+}
+```
+The preceding middleware is added as a method on the application so that it can access the application dependencies, like the `infoLog`:
+
+```go
+type application struct {
+	...
+	infoLog       *log.Logger
+	...
+}
+```
+
+### Register middleware
+
+If your middleware needs to execute on all routes, register it where you register routes. This example returns the [security middleware](#security-headers) from the [logging middleware](#request-logging), and the security middleware returns the `mux`.
+
+```go
+// return a handler
+func (app *application) routes() http.Handler {
+
+	mux := http.NewServeMux()
+	// register routes
+
+	return app.logRequest(secureHeaders(mux))
+}
+```
+
+> Think of the `mux` as the main handler that you are returning--it is the handler registered to your server struct in `main`--so the other handlers enclose it.
+
+### Panics
+
+If there is a panic in a handler, the panic is isolated in the goroutine that runs the handler, so your application does not stop. However, you should handle panics to provide a good user experience.
+
+The following middleware handles panics in a handler goroutine. It recovers from the panic, then sets a `Connection: close` header so the server closes the panicked connection.
+
+```go
+func (app *application) recoverPanic(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Create a deferred function (which will always be run in the event
+        // of a panic as Go unwinds the stack).
+        defer func() {
+            // Use the builtin recover function to check if there has been a
+            // panic or not. If there has...
+            if err := recover(); err != nil {
+                // Set a "Connection: close" header on the response.
+                w.Header().Set("Connection", "close")
+                // Call the app.serverError helper method to return a 500
+                // Internal Server response.
+                app.serverError(w, fmt.Errorf("%s", err))
+            }
+        }()
+
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+Add this handler to the beginning of the middleware chain so that it recovers from any panic that occurs in any handler:
+
+```go
+func (app *application) routes() http.Handler {
+
+	mux := http.NewServeMux()
+	// register routes
+
+	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+}
+
+```
+
+The previous panic handlers recover only when the panic occurs in the same goroutine that runs the handler. If your handler spins off another goroutine that might panic, you can add the following anonymous function to do the work and handle the possible panic:
+
+```go
+func myHandler(w http.ResponseWriter, r *http.Request) {
+    ...
+
+    // Spin up a new goroutine to do some background processing.
+    go func() {
+        defer func() {
+            if err := recover(); err != nil {
+                log.Print(fmt.Errorf("%s\n%s", err, debug.Stack()))
+            }
+        }()
+
+        doSomeBackgroundProcessing()
+    }()
+
+    w.Write([]byte("OK"))
+}
+```
 
 ## Existing docs
 
@@ -452,29 +631,3 @@ func newMux(todoFile string) http.Handler {
 	return m
 }
 ```
-
-## HTTP general
-
-### Status codes
-
-Use `http.StatusText()` to return the text for an HTTP status code. For example:
-```go
-http.StatusText(200)
-```
-Go provides status code constants to make code more human readable. For example:
-`http.NotFound` when a client requests an unknown route
-`http.StatusOK` 200
-`http.StatusInternalServerError` return for standard server error
-`http.StatusMethodNotAllowed` when a client uses an unsupported request method
-`http.StatusBadRequest` 
-`http.StatusCreated` 201. request succeeded and led to the creation of a resource
-
-### Request methods
-
-Go provides constant values to identify request methods:
-
-```go
-http.MethodGet
-http.MethodPost
-```
-
