@@ -202,7 +202,7 @@ import "github.com/rjs/url-parser/parser"
 
 
 
-## Project structure
+## CLI tools
 
 
 ```shell
@@ -242,7 +242,7 @@ hit-tool
 
 ```
 
-### Web applications
+## Web apps
 
 Web app structure separates the Go code and the web assets to simplify building and deploying. 
 

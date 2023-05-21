@@ -186,14 +186,19 @@ If you access a method that accepts arguments, then you pass them by listing the
 
 By default, you can only pass one piece of dynamic data when executing a template set. A common workaround is to wrap the dynamic data in a struct.
 
+The struct is just a wrapper--do not worry about the logical grouping of the data. Include any data that you want to dynamically inject into the template during execution.
+
 To wrap the dynamic data, you must create a `templates.go` file in your `/cmd/web` directory, and wrap the data:
 
 ```go
 type templateData struct {
-	Snippet  *models.Snippet
-	Snippets []*models.Snippet
+	CurrentYear int
+	Snippet     *models.Snippet
+	Snippets    []*models.Snippet
 }
 ```
+
+You use this dynamic data in your handlers.
 
 Next, instantiate the wrapper struct, and pass it to the template set during execution:
 
@@ -211,8 +216,8 @@ func (app *application) handlerView(w http.ResponseWriter, r *http.Request) {
         app.serverError(w, err)
     }
 }
-
 ```
+
 
 Use dot notation to access the fields in the template:
 
@@ -351,3 +356,184 @@ The following table describes the most common templating functions:
 > In Go templating, _yeild_ means _render_.
 
 ## Caching templates
+
+You do not want to parse template files each time you render a web page. The correct strategy is to create a map (a cache) that stores a template set for each page you want to render and a helper function that executes the specified template set.
+
+First, create the template cache in `templates.go`:
+
+```go
+func newTemplateCache() (map[string]*template.Template, error) {
+    // Initialize a new map to act as the cache.
+    cache := map[string]*template.Template{}
+
+    // Use the filepath.Glob() function to get a slice of all filepaths that
+    // match the pattern "./ui/html/pages/*.tmpl". This will essentially gives
+    // us a slice of all the filepaths for our application 'page' templates
+    // like: [ui/html/pages/home.tmpl ui/html/pages/view.tmpl]
+    pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")
+    if err != nil {
+        return nil, err
+    }
+
+    // Loop through the page filepaths one-by-one.
+    for _, page := range pages {
+        // Extract the file name (like 'home.tmpl') from the full filepath
+        // and assign it to the name variable.
+        name := filepath.Base(page)
+
+        // Parse the base template file into a template set.
+        ts, err := template.ParseFiles("./ui/html/base.tmpl.html")
+        if err != nil {
+            return nil, err
+        }
+
+        // Call ParseGlob() *on this template set* to add any partials.
+        ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl.html")
+        if err != nil {
+            return nil, err
+        }
+
+        // Call ParseFiles() *on this template set* to add the  page template.
+        ts, err = ts.ParseFiles(page)
+        if err != nil {
+            return nil, err
+        }
+
+        // Add the template set to the map, using the name of the page
+        // (like 'home.tmpl') as the key.
+        cache[name] = ts
+    }
+
+    // Return the map.
+    return cache, nil
+}
+```
+The `newTemplateCache()` function creates a template set for each page in the `/ui` directory with the following steps:
+1. Creates a new map to cache the templates in memory
+2. Searches the `/ui` directory for files with the project's template extension and stores them in a slice. In this example, the file extension is `.tmpl.`
+3. Loop through the slice. For each template file, do the following:
+   - Store the file name
+   - Parse the base template
+   - Find any partials, parse them and add them to the template set
+   - Parse the current template file, adding it to the template set
+   - Add the current template set to the cache
+
+Next, write a helper function to render each template set in the cache. The helper should perform the following:
+- Get the correct template set from the cache
+- Create a bytes buffer to execute the template. This allows error checking.
+- Write an HTTP header
+- Write the buffer to the writer.
+
+This helper simplifies handler functions:
+
+```go
+func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
+    // Retrieve the appropriate template set from the cache based on the page
+    // name (like 'home.tmpl'). If no entry exists in the cache with the
+    // provided name, then create a new error and call the serverError() helper
+    // method that we made earlier and return.
+    ts, ok := app.templateCache[page]
+    if !ok {
+        err := fmt.Errorf("the template %s does not exist", page)
+        app.serverError(w, err)
+        return
+    }
+
+    // Initialize a new buffer.
+    buf := new(bytes.Buffer)
+
+    // Write the template to the buffer, instead of straight to the
+    // http.ResponseWriter. If there's an error, call our serverError() helper
+    // and then return.
+    err := ts.ExecuteTemplate(buf, "base", data)
+    if err != nil {
+        app.serverError(w, err)
+        return
+    }
+
+    // If the template is written to the buffer without any errors, we are safe
+    // to go ahead and write the HTTP status code to http.ResponseWriter.
+    w.WriteHeader(status)
+
+    // Write the contents of the buffer to the http.ResponseWriter. Note: this
+    // is another time where we pass our http.ResponseWriter to a function that
+    // takes an io.Writer.
+    buf.WriteTo(w)
+}
+```
+
+Finally, use the helper to the handler. Add the helper after you perform any error checking:
+
+```go
+func handlerName(w, r) {
+    // error checking
+    // retrieve data from db
+
+    app.render(w, http.StatusOK, "home.tmpl", &templateData{
+            Datas: data,
+        })
+}
+```
+## Custom template functions
+
+You can create your own functions that you can pass to templates in the same way that you use `{{eq}}` or `{{len}}`. The function can return only one value and an optional `error`.
+
+To create a custom template function, follow these steps:
+1. Write your function.
+2. Store the function in a [FuncMap](https://pkg.go.dev/text/template#FuncMap).
+3. Register the `FuncMap` with the template set with the following steps:
+   1. Create an empty template set with `New()`
+   2. Register the `FuncMap` with `Funcs()`.
+   3. Parse the template set.
+
+```go
+// Create a humanDate function which returns a nicely formatted string
+// representation of a time.Time object.
+func humanDate(t time.Time) string {
+    return t.Format("02 Jan 2006 at 15:04")
+}
+
+// Initialize a template.FuncMap object and store it in a global variable. This is
+// essentially a string-keyed map which acts as a lookup between the names of our
+// custom template functions and the functions themselves.
+var functions = template.FuncMap{
+    "humanDate": humanDate,
+}
+
+func newTemplateCache() (map[string]*template.Template, error) {
+    ...
+
+    for _, page := range pages {
+        name := filepath.Base(page)
+
+        // The template.FuncMap must be registered with the template set before you
+        // call the ParseFiles() method. This means we have to use template.New() to
+        // create an empty template set, use the Funcs() method to register the
+        // template.FuncMap, and then parse the file as normal.
+        ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
+        if err != nil {
+            return nil, err
+        }
+        ...
+    }
+
+    return cache, nil
+}
+```
+
+Use the custom functions just as you would use native template functions:
+
+```html
+<div class="metadata">
+    <time>Created: {{humanDate .Created}}</time>
+    <time>Expires: {{humanDate .Expires}}</time>
+</div>
+```
+You can also use Unix pipes to chain functions:
+
+```html
+<div class="metadata">
+    <time>Created: {{.Created | humanDate}}</time>
+    <time>Expires: {{.Expires | humanDate | printf "Created: %s"}}</time>
+</div>
+```
