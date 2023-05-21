@@ -119,6 +119,235 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 A partial is a smaller template component that you might reuse in multiple pages. For example, a navigation bar.
 
-## Blocks
+
+
+## Dynamic data
+
+As stated earlier, the dot (`.`) represents any dynamic data that you want to pass to the template.
+
+You can pass dynamic data when you execute the template. For example, you can pass a struct to the template set:
+
+```go
+err = ts.ExecuteTemplate(w, "base", snippet)
+if err != nil {
+    app.serverError(w, err)
+}
+```
+When the template set is executed, it will include `snippet` as its dynamic data. If `snippet` is a struct (in this example, it is a struct), you can render the value of an exported field in your template by postfixing the dot with the field name.
+
+For example, if you pass a snippet object to a template set:
+
+```go
+type Snippet struct {
+	ID      int
+	Title   string
+	Content string
+	Created time.Time
+	Expires time.Time
+}
+```
+
+You can dynamically render these any exported fields in a template, as follows:
+
+```html
+{{define "title"}}Snippet #{{.ID}}{{end}}
+
+{{define "main"}}
+<div class="snippet">
+    <div class="metadata">
+        <strong>{{.Title}}</strong>
+        <span>#{{.ID}}</span>
+    </div>
+    <pre><code>{{.Content}}</code></pre>
+    <div class="metadata">
+        <time>Created: {{.Created}}</time>
+        <time>Expires: {{.Expires}}</time>
+    </div>
+</div>
+{{end}}
+```
+
+### Method access
+
+If the underlying data type of a rendered field has a method, you can invoke that method and render it. For example, `Snippet.Created` is of type `time.Time`, so you can access the `.Weekday` method:
+
+```html
+<span>{{.Snippet.Created.Weekday}}</span>
+```
+
+If you access a method that accepts arguments, then you pass them by listing them after the method name, with a space between each argument:
+
+```html
+<span>{{.Snippet.Created.AddDate 0 6 0}}</span>
+```
+
+
+### Multiple pieces of dynamic data
+
+By default, you can only pass one piece of dynamic data when executing a template set. A common workaround is to wrap the dynamic data in a struct.
+
+To wrap the dynamic data, you must create a `templates.go` file in your `/cmd/web` directory, and wrap the data:
+
+```go
+type templateData struct {
+	Snippet  *models.Snippet
+	Snippets []*models.Snippet
+}
+```
+
+Next, instantiate the wrapper struct, and pass it to the template set during execution:
+
+```go
+func (app *application) handlerView(w http.ResponseWriter, r *http.Request) {
+    ...
+    // Create an instance of a templateData struct holding the snippet data.
+    data := &templateData{
+        Snippet: snippet,
+    }
+
+    // Pass in the templateData struct when executing the template.
+    err = ts.ExecuteTemplate(w, "base", data)
+    if err != nil {
+        app.serverError(w, err)
+    }
+}
+
+```
+
+Use dot notation to access the fields in the template:
+
+```html
+{{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
+
+{{define "main"}}
+<div class="snippet">
+    <div class="metadata">
+        <strong>{{.Snippet.Title}}</strong>
+        <span>#{{.Snippet.ID}}</span>
+    </div>
+    <pre><code>{{.Snippet.Content}}</code></pre>
+    <div class="metadata">
+        <time>Created: {{.Snippet.Created}}</time>
+        <time>Expires: {{.Snippet.Expires}}</time>
+    </div>
+</div>
+{{end}}
+```
+
+### Pipelining nested templates
+
+When you invoke a template from within another template, you must pipeline the dot to the template you are invoking. To do so, include the dot at the end of each `template` or `block` action:
+
+```html
+<body>
+    <header>
+        <h1><a href="/">Snippebox</a></h1>
+    </header>
+    {{template "nav" .}}
+    <main>
+        {{template "main" .}}
+    </main>
+    <footer>Powered by <a href="https://golang.org/">Go</a></footer>
+    <script src="/static/js/main.js"></script>
+</body>
+```
+In the preceding example, the dynamic data is passed to the "nav" and "main" templates.
+
+## Actions
+
+_Actions_ are components that render data using conditional logic and the value of dot.
+
+### Blocks
 
 A block is a template that can include default content if the page invokes a template that is not in the executed template set.
+
+### if
+`{{if}}` renders content conditionally, with the `{{else}}` and `{{end}}` actions.
+
+### with
+
+`{{with}}` changes the value of dot. When dot holds a value, any dot within its scope is set to its value.
+
+For example, the dot in the following template represents the templateData struct wrapper:
+
+```go
+type templateData struct {
+	Snippet  *models.Snippet
+	Snippets []*models.Snippet
+}
+```
+
+```html
+{{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
+
+{{define "main"}}
+<div class="snippet">
+    <div class="metadata">
+        <strong>{{.Snippet.Title}}</strong>
+        <span>#{{.Snippet.ID}}</span>
+    </div>
+    <pre><code>{{.Snippet.Content}}</code></pre>
+    <div class="metadata">
+        <time>Created: {{.Snippet.Created}}</time>
+        <time>Expires: {{.Snippet.Expires}}</time>
+    </div>
+</div>
+{{end}}
+```
+
+You can use `{{with}}` to pass the `.Snippet` value to any dot within its scope:
+
+```html
+{{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
+
+{{define "main"}}
+    {{with .Snippet}}
+    <div class="snippet">
+        <div class="metadata">
+            <strong>{{.Title}}</strong>
+            <span>#{{.ID}}</span>
+        </div>
+        <pre><code>{{.Content}}</code></pre>
+        <div class="metadata">
+            <time>Created: {{.Created}}</time>
+            <time>Expires: {{.Expires}}</time>
+        </div>
+    </div>
+    {{end}}
+{{end}}
+```
+If there is a value assigned to `templateData.Snippet`, then any dots between `{{with .Snippet}}` and `{{end}}` become `Snippet`, rather than `templateData`.
+
+### range
+`{{range}}` changes the value of dot. It loops over data passed to the template:
+
+```html
+{{range .Snippets}}
+<tr>
+    <td><a href="/snippet/view?id={{.ID}}">{{.Title}}</a></td>
+    <td>{{.Created}}</td>
+    <td>{{.ID}}</td>
+</tr>
+{{end}}
+```
+
+You can use `{{if}}`, `{{continue}}`, and `{{break}}` during range loops just as you would in any C-derived language.
+
+## Functions
+
+The following table describes the most common templating functions:
+
+| Function | Description |
+|:---------|:------------|
+| {{eq .Foo .Bar}} | Yields true if .Foo is equal to .Bar |
+| {{ne .Foo .Bar}} | Yields true if .Foo is not equal to .Bar |
+| {{not .Foo}} | Yields the boolean negation of .Foo |
+| {{or .Foo .Bar}} | Yields .Foo if .Foo is not empty; otherwise yields .Bar |
+| {{index .Foo i}} | Yields the value of .Foo at index i. The underlying type of .Foo must be a map, slice or array, and i must be an integer value. |
+| {{printf "%s-%s" .Foo .Bar}} | Yields a formatted string containing the .Foo and .Bar values. Works in the same way as fmt.Sprintf(). |
+| {{len .Foo}} | Yields the length of .Foo as an integer. |
+| {{$bar := len .Foo}} | Assign the length of .Foo to the template variable $bar |
+
+> In Go templating, _yeild_ means _render_.
+
+## Caching templates
