@@ -136,6 +136,108 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 ## Routers
 
+You can create a router with Go's standard library or a 3rd party package.
+
+### Go router
+
+> The Go standard library does not support naed parameters in URLs, so you might consider a 3rd-party solution for servers with complex routes.
+
+By default, Go supports two types of URL patterns:
+
+_fixed path `/path/endpoint`_
+: A fixed path does not have a trailing slash (`/`). A request must match a fixed path exactly.
+
+_subtree path `/path/bucket/`_
+: A subtree path has a trailing slash. A request must match only the start of the subtree path. Think of subtree paths with a wildcard appended. For example, `/path/bucket/*`.
+
+Create a Go router with these components:
+- `http.Handler` type to satisfy the server's `Handler` field.
+- `Server` struct that wraps the `http.Handler` type.
+- Constructor that returns an instance of the struct that wraps the new type.
+- A method on the `Server` that registers routes.
+- One or more constants that define the routes.
+
+The following example creates all required components:
+
+```go
+const (
+	shorteningRoute  = "/s"
+	resolveRoute     = "/r/"
+	healthCheckRoute = "/health"
+)
+
+// mux is an unexported http.Handler
+type mux http.Handler
+
+// Server is a custom server type.
+type Server struct {
+	mux // the server only exports ServeHTTP
+}
+
+// NewServer returns an instance of the custom Server type.
+func NewServer() *Server {
+	var s Server
+	s.registerRoutes()
+	return &s
+}
+
+func (s *Server) registerRoutes() {
+	mux := http.NewServeMux()
+	mux.Handle(shorteningRoute, httpio.Handler(s.shorteningHandler))
+	mux.Handle(resolveRoute, httpio.Handler(s.resolveHandler))
+	mux.HandleFunc(healthCheckRoute, s.healthCheckHandler)
+	s.mux = mux
+}
+```
+
+### 3rd-party router
+
+This example uses the [julienschmidt](https://github.com/julienschmidt/httprouter) router. This router has a few advantages over the Go standard library router:
+- Supports named parameters.
+- Validates routes. For example, this router matches the home path (`"/"`) path exactly, so no need for manual checks.
+- Easily create `404` error handlers.
+
+
+To create a router, use the `New()` method. You can register handlers with the `Handler()` or `HandlerFunc()` method:
+
+```go
+router := httprouter.New()
+router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+```
+`:id` is a named parameter--it acts as a wildcard for the path segment that it represents.
+
+> Always use the [HTTP method constants](https://pkg.go.dev/net/http#pkg-constants) when you register a route.
+
+You can also use a parameter that matches everything, which is useful when registering static files:
+
+```go
+fileServer := http.FileServer(http.Dir("./ui/static/"))
+router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+```
+#### 404 handler
+
+The `router.NotFound` handler is called when no matching route is found. You can assign it an `http.HandlerFunc(func{w, r})` to handle `404` responses:
+
+```go
+router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app.notFound(w)
+})
+
+```
+
+#### Middleware and router return
+
+Use `alice.New()` to chain middleware in a reader-friendly format:
+
+```go
+standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+```
+
+Next, return the router:
+
+```go
+return standard.Then(router)
+```
 
 
 ## Writing a basic server
@@ -201,96 +303,6 @@ type Server struct {
 }
 ```
 Interface embedding elevates the interface methods to the containing type, so the `Server` implements the `Handler`'s `ServeHTTP` method.
-
-### Define routes
-
-By default, Go supports two types of URL patterns:
-
-_fixed path `/path/endpoint`_
-: A fixed path does not have a trailing slash (`/`). A request must match a fixed path exactly.
-
-_subtree path `/path/bucket/`_
-: A subtree path has a trailing slash. A request must match only the start of the subtree path. Think of subtree paths with a wildcard appended. For example, `/path/bucket/*`.
-
-This server will have the following routes:
-
-- `/json`: accepts a request in key-value pairs, and returns the request in JSON format.
-- `/health`: returns a simple message that the server is running.
-
-At the top of the file above (`type mux http.Handler`), create `const` values that define the routes that your server will handle.
-
-```go
-const (
-	jsonRoute = "/json"
-	healthCheckRoute = "/health"
-)
-```
-### Register routes
-
-Create a method on the custom `Server` type called `registerRoutes()`. This function will create a new multiplex server, register handlers for each route, and assign the multiplex server to the `Server.mux`:
-
-```go
-func (s *Server) registerRoutes() {
-	mux = http.NewServeMux()
-	// TODO: register routes
-	s.mux = mux
-}
-```
-
-> All route handlers should end with `Handler`. For example, `loginHandler`.
-
-#### /health handler
-
-The `/health` handler is the easiest to implement because it replies with a simple response:
-
-1. Create a method on `Server` called `healthCheckHandler`:
-   ```go
-   func (s *Server) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "server is running")
-   }
-   ```
-2. Register the handler with `http.HandleFunc`. This method registers a handler with a multiplexer server. It accepts two arguments: the path as a `string`, and the handler function. It implements `ServeHTTP()`:
-   ```go
-   func (s *Server) registerRoutes() {
-	   mux = http.NewServeMux()
-	   mux.HandleFunc(healthCheckRoute, s.healthCheckHandler)
-	   // TODO: register routes
-	   s.mux = mux
-   }
-   ```
-
-#### /json handler
-
-The initial implementation of the `/json` handler responds with a simple success message to verify that the server is correctly implemented. Serving JSON requires additional packages that will be implemented during a later step:
-
-1. Create a method on `Server` called `jsonHandler`:
-   ```go
-   func (s *Server) jsonHandler(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintln(w, "serving json")
-   }
-   ```
-   For a list of standard methods and statuses, see the [net/http package docs](https://pkg.go.dev/net/http#pkg-constants).
-2. Register the handler with `http.HandleFunc`:
-   ```go
-   func (s *Server) registerRoutes() {
-	   mux = http.NewServeMux()
-	   mux.HandleFunc(healthCheckRoute, s.healthCheckHandler)
-	   mux.HandleFunc(jsonRoute, s.jsonHandler)
-	   s.mux = mux
-   }
-
-### Create a Server constructor
-
-Create the `NewServer()` constructor method. This method creates a new server type, registers the routes to the server, then returns the server:
-
-```go
-func NewServer() *Server {
-	var s Server
-	s.registerRoutes()
-	return &s
-}
-```
 
 ### Create the main method
 
