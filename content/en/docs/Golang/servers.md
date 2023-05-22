@@ -340,6 +340,26 @@ Interface embedding elevates the interface methods to the containing type, so th
    }   
    ```
 
+#### Example 2
+
+```go 
+customServer := &http.Server{
+    Addr:         fmt.Sprintf("%s:%d", *host, *port),
+    Handler:      MuxFunc(*todoFile),
+    ReadTimeout:  10 * time.Second,
+    WriteTimeout: 10 * time.Second,
+}
+```
+
+Start the server with `ListenAndServe`:
+
+```go
+if err := s.ListenAndServe(); err != nil {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+}
+```
+
 ## Static files
 
 
@@ -542,29 +562,15 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
     w.Write([]byte("OK"))
 }
 ```
+## Forms
+
 
 ## Existing docs
 
 
 Implement the fields that you need when you define a custom server:
 
-```go 
-customServer := &http.Server{
-    Addr:         fmt.Sprintf("%s:%d", *host, *port),
-    Handler:      MuxFunc(*todoFile),
-    ReadTimeout:  10 * time.Second,
-    WriteTimeout: 10 * time.Second,
-}
-```
 
-Start the server with `ListenAndServe`:
-
-```go
-if err := s.ListenAndServe(); err != nil {
-    fmt.Fprintln(os.Stderr, err)
-    os.Exit(1)
-}
-```
 
 ### Multiplexers
 
