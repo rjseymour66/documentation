@@ -605,40 +605,61 @@ Consider the following form:
 The following method parses the form, extracts its values with error checking, then inserts the values in a table. At the end, it redirects the request to a new path with `Redirect()`:
 
 ```go
+type snippetCreateForm struct {
+	Title   string
+	Content string
+	Expires int
+	validator.Validator
+}
+
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
     // First we call r.ParseForm() which adds any data in POST request bodies
     // to the r.PostForm map. This also works in the same way for PUT and PATCH
     // requests. If there are any errors, we use our app.ClientError() helper to 
     // send a 400 Bad Request response to the user.
-    err := r.ParseForm()
-    if err != nil {
-        app.clientError(w, http.StatusBadRequest)
-        return
-    }
-
-    // Use the r.PostForm.Get() method to retrieve the title and content
-    // from the r.PostForm map.
-    title := r.PostForm.Get("title")
-    content := r.PostForm.Get("content")
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
     // The r.PostForm.Get() method always returns the form data as a *string*.
     // However, we're expecting our expires value to be a number, and want to
     // represent it in our Go code as an integer. So we need to manually covert
     // the form data to an integer using strconv.Atoi(), and we send a 400 Bad
     // Request response if the conversion fails.
-    expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-    if err != nil {
-        app.clientError(w, http.StatusBadRequest)
-        return
-    }
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+    // Use the r.PostForm.Get() method to retrieve the title and content
+    // from the r.PostForm map.
+	form := snippetCreateForm{
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
+	}
 
-    id, err := app.snippets.Insert(title, content, expires)
-    if err != nil {
-        app.serverError(w, err)
-        return
-    }
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
-    http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.tmpl.html", data)
+		return
+	}
+
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 ```
 
