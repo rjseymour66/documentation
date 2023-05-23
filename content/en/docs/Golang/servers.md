@@ -564,6 +564,131 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 ```
 ## Forms
 
+Parse a form with the Request's `.ParseForm()` method. This method stores data from the form in the requests `PostForm` field as a map of `Values`. In addition, the Request type has a `Form` field. The two have the following differences:
+- `PostForm` is populated for only `POST`, `PATCH`, and `PUT` requests.
+- `Form` is populated for all requests, including query string parameters. Use the `Get()` method to access query string parameters.
+
+The `name` attribute of each HTML form element is the key in the map, and you access the value with the `.Get()` method. For example:
+
+```html
+<input type="text" name="title">
+```
+To get the value of this input, use the following:
+
+```go
+title := r.PostForm.Get("title")
+```
+Consider the following form:
+
+```html
+<form action="/snippet/create" method="post">
+    <div>
+        <label>Title:</label>
+        <input type="text" name="title">
+    </div>
+    <div>
+        <label>Content:</label>
+        <textarea name="content"></textarea>
+    </div>
+    <div>
+        <label>Delete in:</label>
+        <input type="radio" name="expires" value="365" checked> One Year
+        <input type="radio" name="expires" value="7"> One Week
+        <input type="radio" name="expires" value="1"> One Day
+    </div>
+    <div>
+        <input type="submit" value="Publish snippet">
+    </div>
+</form>
+```
+
+The following method parses the form, extracts its values with error checking, then inserts the values in a table. At the end, it redirects the request to a new path with `Redirect()`:
+
+```go
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+    // First we call r.ParseForm() which adds any data in POST request bodies
+    // to the r.PostForm map. This also works in the same way for PUT and PATCH
+    // requests. If there are any errors, we use our app.ClientError() helper to 
+    // send a 400 Bad Request response to the user.
+    err := r.ParseForm()
+    if err != nil {
+        app.clientError(w, http.StatusBadRequest)
+        return
+    }
+
+    // Use the r.PostForm.Get() method to retrieve the title and content
+    // from the r.PostForm map.
+    title := r.PostForm.Get("title")
+    content := r.PostForm.Get("content")
+
+    // The r.PostForm.Get() method always returns the form data as a *string*.
+    // However, we're expecting our expires value to be a number, and want to
+    // represent it in our Go code as an integer. So we need to manually covert
+    // the form data to an integer using strconv.Atoi(), and we send a 400 Bad
+    // Request response if the conversion fails.
+    expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+    if err != nil {
+        app.clientError(w, http.StatusBadRequest)
+        return
+    }
+
+    id, err := app.snippets.Insert(title, content, expires)
+    if err != nil {
+        app.serverError(w, err)
+        return
+    }
+
+    http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+```
+
+If a form field sends multiple values, you have to loop through the `PostForm`. For example:
+
+```html
+<input type="checkbox" name="items" value="foo"> Foo
+<input type="checkbox" name="items" value="bar"> Bar
+<input type="checkbox" name="items" value="baz"> Baz
+```
+
+```go
+for i, item := range r.PostForm["items"] {
+    fmt.Fprintf(w, "%d: Item %s\n", i, item)
+}
+```
+
+`ParseForm` cannot parse request bodies that exceed 10MB, or it returns an error. You can change this amount using `MaxBytesReader()`:
+
+```go
+// Limit the request body size to 4096 bytes
+r.Body = http.MaxBytesReader(w, r.Body, 4096)
+
+err := r.ParseForm()
+if err != nil {
+    http.Error(w, "Bad Request", http.StatusBadRequest)
+    return
+}
+```
+When the limit is reached, the server closes the underlying TCP connection.
+
+### Validation
+
+See [Validation Snippets for Go](https://www.alexedwards.net/blog/validation-snippets-for-go) for field validation patterns.
+
+Validate form values with standard `if` clauses and your validation criteria for best practices. A useful pattern is to create a map, and store the field and a discription of any invalid data in the map:
+
+```go
+// Initialize a map to hold any validation errors for the form fields.
+fieldErrors := make(map[string]string)
+
+// validate fields
+
+// If there are any errors, dump them in a plain text HTTP response and
+    // return from the handler.
+if len(fieldErrors) > 0 {
+	fmt.Fprint(w, fieldErrors)
+	return
+}
+```
 
 ## Existing docs
 

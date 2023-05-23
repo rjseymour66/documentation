@@ -5,8 +5,9 @@ description: >
   Go tooling and tips.
 ---
 
-```shell
+See [An Overview of Go's Tooling](https://www.alexedwards.net/blog/an-overview-of-go-tooling) for a much better overview.
 
+```shell
 # go fmt
 $ gofmt -w <file>.go    # formats <file>.go
 $ gofmt -l dirname/*.go # lists files in dir that do not conform to go formatting 
