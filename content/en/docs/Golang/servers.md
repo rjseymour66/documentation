@@ -711,6 +711,40 @@ if len(fieldErrors) > 0 {
 }
 ```
 
+## Sessions
+
+Create a session with the [scs package](https://github.com/alexedwards/scs) with the following steps:
+
+First, create a table to store the session data.
+
+In the `main` method:
+1. Add the session manager to the application struct.
+2. Create the session manager with `New()`.
+3. Configure the new session manager to use the database.
+4. Set a lifetime on the session manager.
+
+In `routes.go`:
+5. Create a new middleware chain.
+6. Update any routes with the middleware chain.
+
+In the relevant handlers:
+1. Add the message or busniess logic into the session context.
+
+In the `newTemplateData` helper method:
+1. Add a field that makes the business logic available to the application when it is present.
+
+In `templates.go`:
+1. Add a field to the `templateData` struct that stores the data that you want to pass to the template.
+
+Update the template to display the dynamic data from `templateData`.
+
+Now, the `LoadAndSave()` middleware checks each incoming request for a cookie. If a cookie is present, it does the following:
+1. Reads the token
+2. Uses the token to retrieve session data from the database
+3. Adds the session data to the request context so the handlers can use it.
+
+Any changes to session data are updated in the handler request context, and then the middleware updates the changes when it returns.
+
 ## Existing docs
 
 
