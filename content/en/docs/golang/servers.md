@@ -238,7 +238,32 @@ Next, return the router:
 ```go
 return standard.Then(router)
 ```
+### Placeholder routers
 
+When you create a router, it is a good practice to register placeholder handlers that return dummy plaintext responses. This helps you set up the routing infrastructure while managing the business logic at a later time.
+
+In your handlers file, add the placeholder routes:
+
+```go
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display an HTML form for signing up a new user")
+}
+
+func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Create a new user...")
+}
+...
+```
+
+In your routes file (where you register your routes), register the routes:
+
+```go
+	router := httprouter.New()
+	...
+
+	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
+	router.Handler(http.MethodPost, "/user/signup", dynamic.Then(app.userSignupPost()))
+```
 
 ## Writing a basic server
 
@@ -359,10 +384,33 @@ if err := s.ListenAndServe(); err != nil {
     os.Exit(1)
 }
 ```
+## Timeouts
+
+Add timeouts to the server instance. The following timeouts apply to all requests:
+
+```go
+srv := &http.Server{
+	...
+	IdleTimeout:  time.Minute,
+	ReadTimeout:  5 * time.Second,
+	WriteTimeout: 10 * time.Second,
+}
+```
+In the preceding configuration:
+- `IdleTimeout` closes all keep-alive connections after one minute. A keep-alive is HTTP connection reuse, where a single TCP connection is used to send and receive multiple HTTP requests and responses rather than opening new connections.
+  
+  Always set an `IdleTimeout` for the server.
+- `ReadTimeout` sets the amount of time that the request headers and body are read after the request is first accepted. If the read operation exceeds the setting, the connection is closed.
+  
+  By default, `IdleTimeout` uses the same setting as `ReadTimout` if it is not explicitly set. Again--always set `IdleTimeout` on the server.
+- `WriteTimeout` closes the connection if the server tries to write to the connection after the set length. This setting's timeout period behavior depends upon the protocol:
+  - HTTP: Times out _setting seconds_ after the request header is read.
+  - HTTPS: Times out _setting seconds_ after the request is accepted.
+  
+  > This setting does not impact long-running handlers--it impacts how long the handler writes from its buffer to the connection when it returns.
+
 
 ## Static files
-
-
 
 To server static files (files that the server does not process), you have to create a `Handler` with the `FileServer()` function. The `FileServer()` handler serves HTTP requests with the files stored in the path that you pass as a function argument:
 

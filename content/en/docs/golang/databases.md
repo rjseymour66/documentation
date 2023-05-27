@@ -742,3 +742,139 @@ for rows.Next() {
     data = append(data, i)
 }
 ```
+
+## Add a model
+
+
+### Database table
+
+Create the database table that stores the model information:
+
+```shell
+$ mysql -D <database-name> -u root -p$MYSQL_ROOT_PASS
+```
+```sql
+> CREATE TABLE users (
+      id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      hashed_password CHAR(60) NOT NULL,
+      created DATETIME NOT NULL
+  );
+
+ALTER TABLE users ADD CONSTRAINT users_uc_email UNIQUE (email);
+```
+
+### Model skeleton
+
+Create the model in `project/internal/models/`_`model-name.go`_. The model consists of the following:
+- A type whose fields map to the database table
+- A model type that wraps a database connection pool.
+- Methods that perform CRUD operations
+
+For example, the following code creates a users model that represents users that log in to a web application:
+```go
+type User struct {
+    ID             int
+    Name           string
+    Email          string
+    HashedPassword []byte
+    Created        time.Time
+}
+
+// Define a new UserModel type which wraps a database connection pool.
+type UserModel struct {
+    DB *sql.DB
+}
+
+// We'll use the Insert method to add a new record to the "users" table.
+func (m *UserModel) Insert(name, email, password string) error {
+    return nil
+}
+
+// We'll use the Authenticate method to verify whether a user exists with
+// the provided email address and password. This will return the relevant
+// user ID if they do.
+func (m *UserModel) Authenticate(email, password string) (int, error) {
+    return 0, nil
+}
+
+// We'll use the Exists method to check if a user exists with a specific ID.
+func (m *UserModel) Exists(id int) (bool, error) {
+    return false, nil
+}
+```
+
+### Errors
+
+In `project/internal/models/errors.go`_, add any errors that the new model might return:
+
+```go
+var (
+    ...
+    // Add a new ErrInvalidCredentials error. We'll use this later if a user
+    // tries to login with an incorrect email address or password.
+    ErrInvalidCredentials = errors.New("models: invalid credentials")
+
+    // Add a new ErrDuplicateEmail error. We'll use this later if a user
+    // tries to signup with an email address that's already in use.
+    ErrDuplicateEmail = errors.New("models: duplicate email")
+)
+```
+
+### Add the model in main
+
+Finally, wire the model into the application in `main.go`. This includes adding it to the `application` struct and giving it a database connection:
+
+```go
+// Add a new users field to the application struct.
+type application struct {
+    ...
+    users *models.UserModel
+    ...
+}
+
+func main() {
+    ...
+    // Initialize a models.UserModel instance and add it to the application
+    // dependencies.
+    app := &application{
+        ...
+        users: &models.UserModel{DB: db},
+        ...
+    }
+    ...
+}
+```
+
+## Validating unique fields
+
+Some values must be unique among other values stored for an application. For example, an email address in a web application:
+
+```sql
+> CREATE TABLE users (
+      email VARCHAR(255) NOT NULL,
+  );
+
+ALTER TABLE users ADD CONSTRAINT users_uc_email UNIQUE (email);
+```
+
+The preceding SQL code creates an email field and places a constraint on it that requires it be unique among all other email fields within the database.
+
+To check this in the application, you have to check that the database returns the correct error, then return a custom error that describes what occurred:
+
+```go
+func (app *Application) myHandler() {
+
+	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword))
+	if err != nil {
+		var mySQLError *mysql.MySQLError
+		if errors.As(err, &mySQLError) {
+			if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "users_uc_email") {
+				return ErrDuplicateEmail
+			}
+		}
+		return err
+	}
+}
+```
