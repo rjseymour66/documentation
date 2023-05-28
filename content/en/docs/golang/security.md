@@ -105,3 +105,83 @@ You must encrypt sensitive data, and Go's [crypto](https://pkg.go.dev/golang.org
 ```shell
 $ go get golang.org/x/crypto/bcrypt@latest
 ```
+
+## CSRF
+
+Cross-Site Request Forgery is when you are logged into an application, then navigate to another site that sends a malicious, state-changing request with your session cookie. [CRSF Demystified](https://www.gnucitizen.org/blog/csrf-demystified/) provides a detailed explanation.
+
+You can set the SameSite cookie attribute, but that is not supported by 100% of browsers. The answer is to pass a _CSRF token_.
+
+A CSRF token is generated and sent in the CSRF cookie. You have to hide a field in each form that contains the token, and then add middleware that verifies that the token and the value in the cookie match.
+
+First, add a 3rd-party package:
+```shell
+$ go get github.com/justinas/nosurf@v1
+```
+
+Next, create the middleware. This function sets the cookie in the request:
+
+```go
+func noSurf(next http.Handler) http.Handler {
+    csrfHandler := nosurf.New(next)
+    csrfHandler.SetBaseCookie(http.Cookie{
+        HttpOnly: true,
+        Path:     "/",
+        Secure:   true,
+    })
+
+    return csrfHandler
+}
+```
+
+In your routes file, add the middleware to every route except the static file server:
+
+```go
+func (app *application) routes() http.Handler {
+    router := httprouter.New()
+    // ...
+    // Use the nosurf middleware on all our 'dynamic' routes.
+    dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+
+    // routes
+
+    // Because the 'protected' middleware chain appends to the 'dynamic' chain
+    // the noSurf middleware will also be used on the three routes below too.
+    protected := dynamic.Append(app.requireAuthentication)
+
+    // routes cont't
+
+    return standard.Then(router)
+}
+```
+
+Next, make the CSRF token available to each template in the `templateData` struct:
+
+```go
+type templateData struct {
+    CurrentYear     int
+    ...
+    CSRFToken       string // Add a CSRFToken field.
+}
+```
+Inject the data into each template with the `newTemplateData` helper:
+
+```go
+func (app *application) newTemplateData(r *http.Request) *templateData {
+    return &templateData{
+        CurrentYear:     time.Now().Year(),
+        Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+        IsAuthenticated: app.isAuthenticated(r),
+        CSRFToken:       nosurf.Token(r), // Add the CSRF token.
+    }
+}
+```
+
+Finally, add the hidden `input` field to each form:
+
+```html
+<form>
+  <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+  <!-- form fields -->
+</form>
+```
