@@ -54,14 +54,6 @@ func WithValue(parent Context, key, val any) Context
 : Returns a copy of `parent` whose `Value` method returns `val` for `key`.
 
 
-
-
-
-
-
-
-
-
 A function that accepts a context should always check if the context is canceled.
 
 `Background` creates a non-cancelable context. Then, you can derive a cancelable timeout context using the `WithTimeout` function.
@@ -95,4 +87,63 @@ If the context expires because of the timeout, you can check the context's `.Err
 			}
 		}
         ...
+```
+
+## HTTP Requests
+
+The request context should store information relevant to the lifetime of a specific request. Do not pass dependencies within the context (loggers, etc.).
+
+Every HTTP request has an embedded context object. Use this object to pass information between handlers and middleware.
+
+### Creating a context
+
+Add data to a context with key-value pairs. To avoid context key collisions, create your own custom type for each context key:
+
+```go
+// Declare a custom "contextKey" type for your context keys.
+type contextKey string
+
+// Create a constant with the type contextKey that we can use.
+const isAuthenticatedContextKey = contextKey("isAuthenticated")
+```
+
+Next, use the new context key. You don't add information to the request's context--you create a copy of the request context, modify it, then make a copy of the request and add the new, copied context. Additionally, you should create a custom type for each context key  For example:
+
+```go
+// Set the value in the request context, using our isAuthenticatedContextKey 
+// constant as the key.
+ctx := r.Context()
+ctx = context.WithValue(ctx, isAuthenticatedContextKey, true)
+r = r.WithContext(ctx)
+```
+In the preceding code:
+1. Get the existing context.
+2. `WithValue` copies the existing context, then add a key-value pair where `isAuthenticated` is the key, and `true` is the value.
+3. `WithContext` creates a copy of the request and addes the new context.
+
+A more concise example with equivalent functionality:
+```go
+ctx = context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+r = r.WithContext(ctx)
+```
+
+### Retrieving a context
+
+Request context values are stored as type `any`. This means that you need to assert their type when you retreive them:
+
+```go
+isAuthenticated, ok := r.Context().Value("isAuthenticated").(bool)
+if !ok {
+    return errors.New("could not convert value to bool")
+}
+```
+The preceding code performs type a type assertion using a Go idiom in the following, basic format:
+
+```go
+test := 9
+val, ok := test.(int)
+if != ok {
+	// do something...
+}
+
 ```
