@@ -54,6 +54,35 @@ root
             └── main.js
 
 ```
+### `/cmd`
+
+Holds executables
+
+#### `/web`
+
+Holds executables for the web application:
+  - `context.go`
+  - `handlers.go`
+  - `helpers.go`
+  - `main.go`
+  - `middleware.go`
+  - `routes.go`
+  - `templates.go`
+
+### `/internal`
+
+#### `/models`
+
+#### `/validator`
+
+### `/tls`
+
+### `/ui`
+
+#### `/html`
+
+#### `/static`
+
 
 ## Template data
 
