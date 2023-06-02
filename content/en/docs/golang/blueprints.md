@@ -9,23 +9,39 @@ description: >
 ## Web applications
 
 ```shell
-root
+project/
 ├── cmd
 │   └── web
 │       ├── context.go
 │       ├── handlers.go
+│       ├── handlers_test.go
 │       ├── helpers.go
 │       ├── main.go
 │       ├── middleware.go
+│       ├── middleware_test.go
 │       ├── routes.go
-│       └── templates.go
+│       ├── templates.go
+│       └── testutils_test.go
+├── go.mod
+├── go.sum
 ├── internal
+│   ├── assert
+│   │   └── assert.go
 │   ├── models
 │   │   ├── errors.go
+│   │   ├── mocks
+│   │   │   ├── snippets.go
+│   │   │   └── users.go
 │   │   ├── snippets.go
-│   │   └── users.go
+│   │   ├── testdata
+│   │   │   ├── setup.sql
+│   │   │   └── teardown.sql
+│   │   ├── testutils_test.go
+│   │   ├── users.go
+│   │   └── users_test.go
 │   └── validator
 │       └── validator.go
+├── README.md
 ├── tls
 │   ├── cert.pem
 │   └── key.pem
