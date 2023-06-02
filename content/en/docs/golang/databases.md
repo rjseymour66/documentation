@@ -70,9 +70,17 @@ func openDB(dsn string) (*sql.DB, error) {
 You want to encapsulate the code that works with MySQL in its own package. Create a new file in `root/internal/models/project.go` for your SQL data model.
 
 The data access layer consists of the following:
+- An interface that holds method signatures for the data object. This facilitates testing with mocks:
+  ```go
+  type SnippetModelInterface interface {
+	  Insert(title string, content string, expires int)   (int, error)
+	  Get(id int) (*Example, error)
+	  Latest() ([]*Example, error)
+  }
+  ```
 - A struct that holds data for each individual object that you want to commit to the database. Generally, the struct fields should correspond to the table columns:
   ```go
-  type Object struct {
+  type Example struct {
     ID      int
     Title   string
     Content string

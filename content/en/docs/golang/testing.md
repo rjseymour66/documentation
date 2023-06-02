@@ -181,7 +181,26 @@ $ go test -v -run=TestName/^with_port
 // run a specific subtest
 $ go test -v -run=TestName/with_port
 ```
+### short
 
+Use the short flag to skip long-running tests, like integration tests. To designate a test as a short test, add the following snippet at the beginning of the test function:
+
+```go
+func TestFunction(t *testing.T) {
+    // Skip the test if the "-short" flag is provided when running the test.
+    if testing.Short() {
+        t.Skip("models: skipping integration test")
+    }
+
+    ...
+}
+```
+
+When you run tests, include the `-short` flag to skip any tests that include the `testing.Short()` function:
+
+```shell
+$ go test -v -short ./...
+```
 
 ## Unit tests 
 
@@ -261,9 +280,13 @@ for name, tc := range tt {
 
 Tests that have `t.Parallel()` on the first line of the `t.Run()` function.
 
-Go pauses all tests with `t.Parallel()` and then runs them when other tests complete. `GOMAXPROCS` determines how many tests run in parallel. By default, `GOMAXPROCS` is set to the number of CPUs on the machine.
+Go pauses all tests with `t.Parallel()` and then runs them when other tests complete. `GOMAXPROCS` determines how many tests run in parallel. By default, `GOMAXPROCS` is set to the number of CPUs on the machine. You can override this with the `-parallel` flag:
 
+```shell
+$ go test -parallel=4 ./...
+```
 
+Tests marked with `t.Parallel()` are run in parallel with _and only with_ other parallel tests.
 
 ### Skipping tests 
 
@@ -479,7 +502,13 @@ The cover tool uses three colors to identify code coverage:
 - green: sufficiently tested
 - red: not covered by tests
 
+To view test coverage by function, use the following commands:
 
+```shell
+$ go test -coverprofile=/tmp/profile.out ./...
+$ go tool cover -func=/tmp/profile.out
+```
+> All test must pass or the preceding command fails.
 
 ## Benchmark tests 
 
@@ -608,11 +637,40 @@ $ go test -tags=cli
 For additional details, see [Build constraints](https://pkg.go.dev/cmd/go#hdr-Build_constraints).
 
 
-## Testing dependencies
+## Mocks, stubs, fakes (dependencies)
 
-### Stubs
-### Mocks
-### Fakes
+Mocks, stubs, and fakes are simple implemenatations of code that you need to test. The different terms are interchangeable--the important part is that the test dependency _exposes the same interface as the production object_.
+
+These test dependencies should be in their own package. For example, `internal/models/mocks/file.go`. A mock is a hard-coded values that you can use in your test cases:
+
+```go
+func (m *UserModel) Insert(name, email, password string) error {
+	switch email {
+	case "dupe@example.com":
+		return models.ErrDuplicateEmail
+	default:
+		return nil
+	}
+}
+
+func (m *UserModel) Authenticate(email, password string) (int, error) {
+	if email == "alice@example.com" && password == "pa$$word" {
+		return 1, nil
+	}
+
+	return 0, models.ErrInvalidCredentials
+}
+
+func (m *UserModel) Exists(id int) (bool, error) {
+	switch id {
+	case 1:
+		return true, nil
+	default:
+		return false, nil
+	}
+}
+```
+
 
 ## Test data
 
@@ -624,9 +682,35 @@ When testing file writes, use _goldenfiles_: files that contain the expected res
 
 `iotest.TimeoutReader(r)` simulates a reading failure and returns a timeout error.
 
-## Integration testing with external resources
+## Integration testing
 
-If you are testing external commands that modify the state of an external resource, the testing conditions change after each test.
+If you are testing external commands that modify the state of an external resource, the testing conditions change after each test. That is why you should use mocks.
+
+### Test db setup and teardown
+
+First, you have to create a new test database. Login as the root user:
+
+```shell
+$ mysql...
+```
+Create the database and user, then grant the user privileges:
+
+```sql
+> CREATE DATABASE test_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> CREATE USER 'test_web'@'localhost';
+> GRANT CREATE, DROP, ALTER, INDEX, SELECT, INSERT, UPDATE, DELETE ON test_database.* TO 'test_web'@'localhost';
+> ALTER USER 'test_web'@'localhost' IDENTIFIED BY 'pass';
+```
+Next, create a _setup script_ (setup.sql) and a _teardown script_ (teardown.sql). Create each file in the `internal/models/testdata/` directory.
+
+> Go tooling ignores the `testdata` directory.
+
+Next, create a `testutils_test.go` file in `/internal/models/`. This file includes code that performs the following:
+- Creates a new database connection pool for the test db
+- Executes the `setup.sql` script
+- Executes the `teardown.sql` script from within a cleanup function
+- Closes the connection pool
+
 
 ## HTTP
 
@@ -772,4 +856,230 @@ func TestSecureHeaders(t *testing.T) {
 
 ## End-to-end tests
 
-End-to-end tests verify how your routing, middleware, and handlers work together as a single unit, rather than in isolation.
+End-to-end (E2E) tests verify how your routing, middleware, and handlers work together as a single unit, rather than in isolation.
+
+E2E test require the `httptest.New[TLS]Server` and test client to mimic a production environment. The following example demonstrates the following:
+- Minimal application
+- `httptest.NewTLSServer`.
+- `ts.Client`, which is a method on the httptest package's `Server` type.
+- Assert the status code and response body are correct
+
+```go
+func TestPingE2E(t *testing.T) {
+	// Create a new instance of our application struct. For now, this just
+	// contains a couple of mock loggers (which discard anything written to
+	// them). The loggers are required by a few of our middlewares.
+	app := &application{
+		errorLog: log.New(io.Discard, "", 0),
+		infoLog:  log.New(io.Discard, "", 0),
+	}
+
+	// We then use the httptest.NewTLSServer() function to create a new test
+	// server, passing in the value returned by our app.routes() method as the
+	// handler for the server. This starts up a HTTPS server which listens on a
+	// randomly-chosen port of your local machine for the duration of the test.
+	// Notice that we defer a call to ts.Close() so that the server is shutdown
+	// when the test finishes.
+	ts := httptest.NewTLSServer(app.routes())
+	defer ts.Close()
+
+	// The network address that the test server is listening on is contained in
+	// the ts.URL field. We can  use this along with the ts.Client().Get() method
+	// to make a GET /ping request against the test server. This returns a
+	// http.Response struct containing the response.
+	rs, err := ts.Client().Get(ts.URL + "/ping")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We can then check the value of the response status code and body using
+	// the same pattern as before.
+	assert.Equal(t, rs.StatusCode, http.StatusOK)
+
+	defer rs.Body.Close()
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes.TrimSpace(body)
+
+	assert.Equal(t, string(body), "OK")
+}
+```
+
+The following E2E test checks whether a handler returns the correct response. First, the mock:
+
+```go
+var mockSnippet = &models.Snippet{
+	ID:      1,
+	Title:   "An old silent pond",
+	Content: "An old silent pond...",
+	Created: time.Now(),
+	Expires: time.Now(),
+}
+```
+
+Next, the handler test:
+
+```go
+func TestSnippetView(t *testing.T) {
+	// Create a new instance of our application struct which uses the mocked
+	// dependencies.
+	app := newTestApplication(t)
+
+	// Establish a new test server for running end-to-end tests.
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	// Set up some table-driven tests to check the responses sent by our
+	// application for different URLs.
+	tests := []struct {
+		name     string
+		urlPath  string
+		wantCode int
+		wantBody string
+	}{
+		{
+			name:     "Valid ID",
+			urlPath:  "/snippet/view/1",
+			wantCode: http.StatusOK,
+			wantBody: "An old silent pond...",
+		},
+		{
+			name:     "Non-existent ID",
+			urlPath:  "/snippet/view/2",
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name:     "Negative ID",
+			urlPath:  "/snippet/view/-1",
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name:     "Decimal ID",
+			urlPath:  "/snippet/view/1.23",
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name:     "String ID",
+			urlPath:  "/snippet/view/foo",
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name:     "Empty ID",
+			urlPath:  "/snippet/view/",
+			wantCode: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, _, body := ts.get(t, tt.urlPath)
+
+			assert.Equal(t, code, tt.wantCode)
+
+			if tt.wantBody != "" {
+				assert.StringContains(t, body, tt.wantBody)
+			}
+		})
+	}
+}
+```
+
+### Testing utilities
+
+E2E tests require lots of boilerplate code--spinning up test servers, making requests, etc. You can abstract much of that code away to a `testutils_test.go` file.
+
+If you plan to use the test utilities across multiple packages, place them in the `/internal` directory. Otherwise, place them in the same directory as the code they help test.
+
+In the previous section, we created the `TestPingE2E` function to test the `ping` handler from end to end. We can create a new `testutils_test.go` file that creates the following test components:
+- Application
+- Server
+- Client request
+
+For example:
+
+```go
+// Create a newTestApplication helper which returns an instance of our
+// application struct containing mocked dependencies.
+func newTestApplication(t *testing.T) *application {
+	return &application{
+		errorLog: log.New(io.Discard, "", 0),
+		infoLog:  log.New(io.Discard, "", 0),
+	}
+}
+
+// Define a custom testServer type which embeds a httptest.Server instance.
+type testServer struct {
+	*httptest.Server
+}
+
+// Create a newTestServer helper which initalizes and returns a new instance
+// of our custom testServer type.
+func newTestServer(t *testing.T, h http.Handler) *testServer {
+    // Initialize the test server as normal.
+    ts := httptest.NewTLSServer(h)
+
+    // Initialize a new cookie jar.
+    jar, err := cookiejar.New(nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    // Add the cookie jar to the test server client. Any response cookies will
+    // now be stored and sent with subsequent requests when using this client.
+    ts.Client().Jar = jar
+
+    // Disable redirect-following for the test server client by setting a custom
+    // CheckRedirect function. This function will be called whenever a 3xx
+    // response is received by the client, and by always returning a
+    // http.ErrUseLastResponse error it forces the client to immediately return
+    // the received response.
+    ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+        return http.ErrUseLastResponse
+    }
+
+    return &testServer{ts}
+}
+
+// Implement a get() method on our custom testServer type. This makes a GET
+// request to a given url path using the test server client, and returns the
+// response status code, headers and body.
+func (ts *testServer) get(t *testing.T, urlPath string) (int, http.Header, string) {
+	rs, err := ts.Client().Get(ts.URL + urlPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer rs.Body.Close()
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes.TrimSpace(body)
+
+	return rs.StatusCode, rs.Header, string(body)
+}
+```
+
+> Note how the `newTestServer` function handles cookies. Cookies are stored for each HTTP response and sent back to the test server for any responses. Additionally, the client never follows redirects so that hit always returns the first HTTP response sent by our server for the request.
+
+Now, you can simplify the `TestPingE2E` function considerably:
+
+```go
+func TestPingE2E(t *testing.T) {
+    app := newTestApplication(t)
+
+    ts := newTestServer(t, app.routes())
+    defer ts.Close()
+
+    code, _, body := ts.get(t, "/ping")
+
+    assert.Equal(t, code, http.StatusOK)
+    assert.Equal(t, body, "OK")
+}
+```
+
+## Testing HTML
+
+None of this worked. Try it later as you write the code, instead of at the very end.
