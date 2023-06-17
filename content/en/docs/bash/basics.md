@@ -16,6 +16,46 @@ $ chmod +x script_name
 $ ./script_name
 ```
 
+## Arguments
+
+Shell arguments are 0-indexed, and are always preceded with the `$` symbol. For example, `$0` is the shell itself, and `$1` is the first argument passed to the shell.
+
+You can process all CLI args at once with the following commands. Notice the different behavior when each command is wrapped in double quotes (`""`):
+
+`$*`
+: Specifies all command arguments.
+
+`$@`
+: Specifies all command arguments.
+
+`"$*"`
+: Takes the entire argument list as one argument, with a space between each value.
+
+`"$@"`
+: Takes the entire argument list as separates it into individual arguments.
+
+
+> Look into the `shift` command.
+
+## Variables
+
+A variable is a user-defined value that points to data. Define variables with the following syntax:
+
+```bash
+$ var='value to assign'
+
+# access with '$'
+$ echo $var
+$ print $var
+$ cat $var_file
+```
+
+### Quotes and tics
+
+Backticks, double-, and single-quotes have different use cases:
+- single (`''`): When you want to use the literal text in the variable ro command statement and do not want character or command substution.
+- double (`""`): Allow white space, and character or command substitution.
+- backticks (\` \`): Execute a command or script and have its ouput substituted.
 
 ## Functions
 
@@ -114,6 +154,7 @@ match_3)
 *)
     # commands for default (no match)
     ;;
+esac
 ```
 
 ### Control keywords
