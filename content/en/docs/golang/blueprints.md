@@ -8,6 +8,13 @@ description: >
 
 ## Web applications
 
+Web applications have an `application` struct that contains the following:
+- loggers
+- models (with db connections)
+- templateCache
+- (optional) form decoder
+- (optional) session manager
+
 ```shell
 project/
 ├── cmd
@@ -58,16 +65,13 @@ project/
     │       └── nav.tmpl.html
     └── static
         ├── css
-        │   ├── index.html
         │   └── main.css
         ├── img
         │   ├── favicon.ico
-        │   ├── index.html
         │   └── logo.png
-        ├── index.html
         └── js
-            ├── index.html
             └── main.js
+
 
 ```
 ### `/cmd`
@@ -98,6 +102,39 @@ Holds executables for the web application:
 #### `/html`
 
 #### `/static`
+
+### Steps
+
+1. Create your templates, render method, handlers for the templates.
+2. Set up your router.
+3. Add error and info loggers to main, and the application.
+4. Set up `serverError` helper method that logs the trace to the errorLog and sends an `http.Error()` message.
+5. Set up `clientError` helper that validates that form submissions use the correct HTTP verb.
+6. Set up `notFound` helper to manage client requests for pages that do not exist.
+7. Add middleware logger, security header, and panic recovery. Use `github.com/justinas/alice` to simplify routing. Add them as methods to the application so they can access application dependencies, like loggers.
+
+
+## Service blueprint
+
+Services do not require an `application` struct to manage user details.
+
+```shell
+shortner/
+├── cmd
+│   └── servicename
+│       └── main.go or service.go
+├── internal
+│   └── httpio
+│       ├── handler.go
+│       └── httpio.go
+├── linkit
+│   └── errors.go
+└── short
+    ├── server.go
+    ├── server_test.go
+    └── business-logic.go
+
+```
 
 
 ## Template data

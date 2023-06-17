@@ -486,7 +486,7 @@ mux -> myMiddleware -> handler
 
 ### Security headers
 
-Create a new `/cmd/web/middleware.go` file and add a middleware function that adds secure headers to each request:
+Create a new `/cmd/web/middleware.go` file and add a middleware function that adds secure headers to each request. These headers satisfy [OWASP standards](https://owasp.org/www-project-secure-headers/):
 
 ```go
 func secureHeaders(next http.Handler) http.Handler {

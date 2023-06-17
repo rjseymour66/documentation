@@ -34,7 +34,7 @@ To get a database connection pool, you need to provide a database source name (D
 
 The DSN is different for each driver. The `mysql` driver has a `parseTime=true` option, which tells the driver to convert SQL `TIME` and `DATE` to Go `time.Time` objects.
 
-The database connection pool should be long-lived and passed among handlers, so implement it in the `main` method. Include a flag for the `dsn` so you can easily use a different data source:
+The database connection pool should be long-lived and passed among handlers, so implement it in the `main` method. Include a flag for the `dsn` so you can easily use a different data source. In addition, include a helper function to encapsulate the database connection code:
 
 ```go
 func main() {
@@ -88,20 +88,20 @@ The data access layer consists of the following:
     Expires time.Time
   }
   ```
-- A `*Type` struct that wraps an `sql.DB` connection pool:
+- An `ExampleModel` struct that wraps an `sql.DB` connection pool. This is the type that you use as the receiver on the interface methods:
   ```go
   type ExampleModel struct {
      DB *sql.DB
   }
   ```
-- On the `ExampleModel`, a method for each database statement that you plan to execute. For example, `Insert`, `Get`, etc.
+- Interface method implementations (`Insert`, `Get`, etc.)
 
 After you create the data access layer, you have to import it into the `main` function and inject it as a dependency into your main application struct:
 
 ```go
 type application struct {
 	...
-    dataAccessObj *models.ExampleModel
+    dataAccessObj   models.ExampleModelInterface
 }
 
 func main() {

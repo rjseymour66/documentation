@@ -7,6 +7,12 @@ description: >
 
 Templates can write dynamic webpages, config files, emails, etc. First, you have to parse the template, then you execute it.
 
+## Overview
+
+A template is composed of one or more templates. For example, you have a base template that contains the HTML metadata, header, body tags, and footer, and other parts (nav bar, main content) are templates that are injected into the base template. To create the templates, you have to parse and execute them. To save resources, you can creat a template cache that parses the templates once--when the server starts--and loads them as needed from a cache (a map). 
+
+After you set up the template cache, you need to create a render method that executes a given template within the cache.
+
 ## Parse a template
 
 You can 
