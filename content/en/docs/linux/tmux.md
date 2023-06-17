@@ -38,34 +38,42 @@ $ tmux ls
 0: 2 windows (created Sun Apr  2 22:34:09 2023)
 ```
 In the previous example, `0` is the name of the session. `0` is the default session name.
-To rejoin a session, enter the following: 
+
 
 ```shell
+# Rejoin a session: 
 $ tmux attach -t <session-name>
-```
-To rename a session, enter the following:
 
-```shell
+# Rename a session:
 $ tmux rename-session -t <current-name> <new-name>
-```
-To give a session a custom name from the outset:
-```shell
+
+# Give a session a custom name from the outset:
 $ tmux new -s <session-name>
-```
-To delete a session:
-```shell
+
+# Delete a session:
 $ tmux kill-session -t <session-name>
 ```
-
-`CTRL + b`
-
 
 
 ## Windows
 
-Create a new window with `CTRL + b` and `c`. This opens up a new window. 
-To switch between windows, use `CTRL + b` and the number of the window, e.g. `0`. Terminal windows are zero-indexed.
+A window is like a new tab in the terminal. You can see the different window names at the bottom of the terminal.
 
-rename your window with `CTRL + b` and a comma (`,`). Then, type the new name.
+```shell
+# Create a new window:
+$ CTRL + b
+$ c
 
-To close a window, either use `CTRL + D` or type `exit`.
+# Switch between windows:
+$ CTRL + b
+$ <number of the window> # e.g. `0`. Terminal windows are zero-indexed.
+
+# Rename your window:
+$ CTRL + b
+$ comma # (`,`)
+$ <window name>
+
+# Close a window:
+$ CTRL + D 
+# or
+$ exit
