@@ -1,7 +1,7 @@
 ---
 title: "Javascript"
 linkTitle: "Javascript"
-weight: 101
+# weight: 80
 description: >
   Notes about basic Javascript.
 ---

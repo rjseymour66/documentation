@@ -1,7 +1,7 @@
 ---
 title: "Bash scripting"
 linkTitle: "Bash"
-weight: 70
+# weight: 10
 description: >
   Writing bash scripts for Linux.
 ---

@@ -1,7 +1,7 @@
 ---
 title: "CSS Styling"
 linkTitle: "CSS Styling"
-weight: 100
+# weight: 20
 description: >
   Notes about basic CSS styling.
 ---

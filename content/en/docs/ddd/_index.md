@@ -1,7 +1,7 @@
 ---
 title: "Domain-driven design"
 linkTitle: "Domain-driven design"
-weight: 1
+# weight: 30
 description: >
   How to use Domain-driven design
 ---

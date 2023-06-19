@@ -1,7 +1,7 @@
 ---
 title: "git"
 linkTitle: "git"
-weight: 20
+# weight: 40
 description: >
   Notes about basic git.
 ---

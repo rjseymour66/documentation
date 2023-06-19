@@ -1,7 +1,7 @@
 ---
 title: "Inkscape"
 linkTitle: "Inkscape"
-weight: 3
+# weight: 70
 description: >
   Notes about Inkscape.
 ---
