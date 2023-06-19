@@ -625,6 +625,8 @@ func FuzzHelloWorld(f *testing.F)  {
 ```
 ## Build tags 
 
+How do build tags work? [Digital Ocean](https://www.digitalocean.com/community/tutorials/customizing-go-binaries-with-build-tags)
+
 Add build tags at the top of test files so you can specify whether or not you want to run them in your test commands. For example, the following build tag designates the file for go tests that use the `cli` tag:
 
 ```go
