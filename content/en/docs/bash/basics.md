@@ -59,8 +59,8 @@ $ cat $var_file
 | `$(( ))` | Evaluates encloded expression. |
 | `[ ]` |  |
 | `<` `>` | String comparison |
-| `$( )` | Command substitution. |
-| `command` | Command substitution. |
+| `$( )` | Command substitution. Execute a command and substitue it in the place of the `$()` syntax. |
+| `command` | Command substitution. Execute a command and substitue it in the place of the `$()` syntax. |
 
 
 ### Quotes and tics
