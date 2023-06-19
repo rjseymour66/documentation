@@ -31,6 +31,7 @@ The following table describes common shell commands:
 | find | Locates files and directories. |
 | head | Views the top of the file. |
 | iostat | Shows input/output status. |
+| last | Shows login history since the `wtmp` file was created | 
 | more | Displays the contents of a file, one page at a time. |
 | netstat | Shows network status. |
 | passwd | Changes the user password. |
@@ -40,7 +41,9 @@ The following table describes common shell commands:
 | sleep _length_ | Pauses execution for _length_ number of seconds. |
 | spell _file_ | Checks spelling on _file_. |
 | tail | Views the end of the file. |
+| tr _chars1_ _chars2_ | Translates `chars1` into the format specified by `chars2` |
 | wc | Counts number of words, lines, and characters in a file. |
+| w | Extended `who` command that also provides `uptime` output. Displays information about who is on the system. |
 | who | Displays information about who is on the system. |
 | whoami | Displays `$LOGNAME` or `$USER` env vars. |
 | who am i | Displays login name, terminal, login date/time, and where logged in. |

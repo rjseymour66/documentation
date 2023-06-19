@@ -50,10 +50,23 @@ $ print $var
 $ cat $var_file
 ```
 
+## Symbol commands
+
+| Command | Description |
+|:--------|:------------|
+| `( )` | Runs command in a subshell. |
+| `(( ))` | Evaluates and assigns value to a variable. |
+| `$(( ))` | Evaluates encloded expression. |
+| `[ ]` |  |
+| `<` `>` | String comparison |
+| `$( )` | Command substitution. |
+| `command` | Command substitution. |
+
+
 ### Quotes and tics
 
 Backticks, double-, and single-quotes have different use cases:
-- single (`''`): When you want to use the literal text in the variable ro command statement and do not want character or command substution.
+- single (`''`): When you want to use the literal text in the variable or command statement and do not want character or command substution.
 - double (`""`): Allow white space, and character or command substitution.
 - backticks (\` \`): Execute a command or script and have its ouput substituted.
 
@@ -180,3 +193,26 @@ A _here document_ provides values to a script without user action. It is a multi
 The here document must contain data in the exact format that the script expects, or it fails. For example, if there are extra spaces, the script fails.
 
 I need to revisit this. For much better examples, see the [Advanced Bash scripting guide](https://tldp.org/LDP/abs/html/here-docs.html).
+
+## Traps (termination signals)
+
+When a program terminates before its supposed to, the computer sends an exit symbol. This is called a trap. You can view them all with `kill -l`:
+
+```bash
+$ kill -l
+ 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ ...
+```
+
+## Processes
+
+The following table shows common `ps` commands:
+
+| Command | Description |
+|:--------|:------------|
+| ps | Currently running processes for the user. |
+| ps -f | Full list of users currently running processes. |
+| ps -ef | Full list of processes, excluding kernel processs. |
+| ps -A | All user and kernel processes. |
+| ps -Kf | Full kernel processes. |
+| ps auxw | Wide listing sorted by percentage of CPU usage. |
