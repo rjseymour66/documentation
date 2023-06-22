@@ -1,5 +1,5 @@
 ---
-title: "Basic types and collections"
+title: "Types and collections"
 weight: 40
 description: >
   Working with basic types and collections in Go.
