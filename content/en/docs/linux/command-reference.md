@@ -104,3 +104,11 @@ $ gzip -l *
                 696                1320  49.8% reboot_test.go
                2946                6473  55.0% (totals)
 ```
+
+## cURL
+
+Use the `-i` flag to display HTTP response headers with the body:
+
+```shell
+$ curl -i localhost:4000/v1/healthcheck
+```
