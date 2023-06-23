@@ -1,6 +1,6 @@
 ---
 title: "Testing"
-weight: 30
+weight: 40
 description: >
   Working with Testing in Go.
 ---

@@ -5,13 +5,12 @@ description: >
   How to work with JSON data.
 ---
 
-
 > **IMPORTANT**: Always pass pointers to `json.Marshall` and `json.Unmarshall`. If you pass a value, the JSON functions operate on a copy and sends the data to the garbage collector after the function returns.
 
 
 ## Marshal into JSON
 
-Marshalling transforms an in-memory data representation (i.e. a struct) into the JSON format for storage or transmission over the network. 
+Marshalling transforms an in-memory data representation (i.e. a struct) into the JSON format for storage or transmission over the network.
 
 ### Struct tags
 
@@ -23,6 +22,23 @@ Struct tags are enclosed in backticks (\`\`). For mulit-word fields, use snake c
 type log struct {
 	Level   string `json:"level"`
 	Message string `json:"message"`
+}
+```
+Struct tags also provide options to hide or omit fields:
+- `-` (hyphon): When you do not want a struct field to appear in output.
+- `omitempty`: Do not create output for the field if the value is empty (the zero value for the field).
+
+For example:
+
+```go
+type Movie struct {
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"-"`
+	Title     string    `json:"title"`
+	Year      int32     `json:"year,omitempty"`
+	Runtime   int32     `json:" runtime,omitempty"`
+	Genres    []string  `json:"genres,omitempty"`
+	Version   int32     `json:"version"`
 }
 ```
 
@@ -197,5 +213,56 @@ var sl []SliceType
 
 if err := json.NewDecoder(f).Decode(&sl); err != nil {
 	return nil, err
+}
+```
+
+## JSON in requests
+
+JSON data is text. A basic JSON response:
+- Marshals the JSON
+- Sets at least the `Content-Type: application/json`
+- Writes the bytes to the `writer`.
+
+The `json.Marshal(v)` function is preferable to the `json.Encode(v)` function because the `Encode` function writes to the `io.writer` immediately, so you will not have time to add headers.
+
+The following example creates a helper function that writes JSON then returns JSON in a healthcheck handler:
+
+```go
+func (app *application) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
+	js, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	js = append(js, '\n')
+
+	for key, value := range headers {
+		w.Header()[key] = value
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(js)
+
+	return nil
+}
+```
+
+Use this helper function with a `map` (or struct) that represents the JSON values:
+
+```go
+func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+
+	data := map[string]string{
+		"status":      "available",
+		"environment": app.config.env,
+		"version":     version,
+	}
+
+	err := app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		app.logger.Print(err)
+		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+	}
 }
 ```

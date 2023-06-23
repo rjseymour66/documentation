@@ -57,7 +57,7 @@ func main() {
 
 ### Handlers as methods
 
-Create handlers as methods on the application struct. This allows the handlers to access any application dependencies, like loggers:
+Create handlers and helpers as methods on the application struct. This allows the handlers to access any application dependencies, like loggers:
 
 ```go
 // main.go
