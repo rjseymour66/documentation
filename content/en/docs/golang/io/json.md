@@ -25,7 +25,7 @@ type log struct {
 }
 ```
 Struct tags also provide options to hide or omit fields:
-- `-` (hyphon): When you do not want a struct field to appear in output.
+- `-` (hyphen): When you do not want a struct field to appear in output.
 - `omitempty`: Do not create output for the field if the value is empty (the zero value for the field).
 
 For example:
@@ -216,7 +216,7 @@ if err := json.NewDecoder(f).Decode(&sl); err != nil {
 }
 ```
 
-## JSON in requests
+## JSON in responses
 
 JSON data is text. A basic JSON response:
 - Marshals the JSON
@@ -264,5 +264,77 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		app.logger.Print(err)
 		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
 	}
+}
+```
+
+## JSON in requests
+
+When you receive a request for JSON data, you have to decode the JSON into Go structs. Additionally, you should check the following:
+- Request size is not too large
+- There are no unknown fields in the request
+- Errors are identified and receive appropriate responses
+- There is only one JSON object sent in the request
+
+The following function completes all these checks:
+
+```go
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+
+	maxBytes := 1_048_576
+	// limit size of req body
+	// https://pkg.go.dev/net/http#MaxBytesReader
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+
+	// create new decoder
+	dec := json.NewDecoder(r.Body)
+	// no unknown fields
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(dst)
+	if err != nil {
+		var syntaxError *json.SyntaxError
+		var unmarshalTypeError *json.UnmarshalTypeError
+		var invalidUnmarshalError *json.InvalidUnmarshalError
+		var maxBytesError *http.MaxBytesError
+
+		// triage errors
+		switch {
+		case errors.As(err, &syntaxError):
+			return fmt.Errorf("body contains badly-formed JSON (at character %d)", syntaxError.Offset)
+
+		case errors.Is(err, io.ErrUnexpectedEOF):
+			return errors.New("body contains badly-formed JSON")
+
+		case errors.As(err, &unmarshalTypeError):
+			if unmarshalTypeError.Field != "" {
+				return fmt.Errorf("body contains incorrect JSON type for field %q", unmarshalTypeError.Field)
+			}
+			return fmt.Errorf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset)
+
+		case errors.Is(err, io.EOF):
+			return errors.New("body must not be empty")
+
+		case strings.HasPrefix(err.Error(), "json: unknown field"):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			return fmt.Errorf("body contains unknown key %s", fieldName)
+
+		case errors.As(err, &maxBytesError):
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
+
+		case errors.As(err, &invalidUnmarshalError):
+			panic(err)
+
+		default:
+			return err
+		}
+	}
+
+	// call Decode again to make sure the request body contained only
+	// a single JSON value.
+	err = dec.Decode(&struct{}{})
+	if err != io.EOF {
+		return errors.New("body must ony contain a single JSON value")
+	}
+	return nil
 }
 ```

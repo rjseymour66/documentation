@@ -47,7 +47,7 @@ if err := returnErr(); err != nil {
 
 ## Check for specific errors with .Is()
 
-Check if an error is a specific type with the [`.Is()` function](https://pkg.go.dev/errors#Is). This function accepts the error value and an error type for comparison. This function is helpful during testings.
+Check if an error is a specific object type with the [`.Is()` function](https://pkg.go.dev/errors#Is). This function accepts the error value and an error type for comparison. This function is helpful during testings.
 
 For example, the following snippet returns `nil` if the the error is `os.ErrNotExist` (the file does not exist); otherwise, it returns the error:
 ```go
@@ -57,6 +57,32 @@ if err != nil {
         return nil
     }
     return err
+}
+```
+
+## Check for types with .As()
+
+Check if an error is of a specific type. I _think_ you use `.Is()` for native Go errors, and `.As()` for custom error types. For example:
+
+```go
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+
+	maxBytes := 1_048_576
+	...
+	if err != nil {
+		
+		var maxBytesError *http.MaxBytesError
+        ...
+        // native go error
+		case errors.Is(err, io.EOF):
+			return errors.New("body must not be empty")
+        ...
+        // custom error type
+		case errors.As(err, &maxBytesError):
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
+        ...
+	}
+	return nil
 }
 ```
 
