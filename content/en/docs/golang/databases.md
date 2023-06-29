@@ -5,7 +5,7 @@ description: >
   Working with Databases in Go.
 ---
 
-## MySQL and Go
+## MySQL
 
 [golang/go SQLDrivers](https://github.com/golang/go/wiki/SQLDrivers)
 
@@ -58,6 +58,9 @@ func openDB(dsn string) (*sql.DB, error) {
     if err != nil {
         return nil, err
     }
+    // Connections are created lazily (as needed), so
+    // ping the db to establish a connection and confirm 
+    // everything is working.
     if err = db.Ping(); err != nil {
         return nil, err
     }
@@ -411,6 +414,31 @@ The following table describes how Go types map to SQL types:
 | `int46`     | BIGINT |
 | `float`     | DECIMAL, NUMERIC |
 | `time.Time` | TIME, DATE, TIMESTAMP (`parseTime=true` DSN parameter) |
+
+
+## Postgres
+
+### Import the driver
+
+1. Go to https://github.com/lib/pq
+2. Go to the root of the project, and use `go get` to download the driver:
+   ```shell
+   $ go get github.com/lib/pq@v1
+   ```
+3. In the Go file that runs the SQL code, import the driver. Because you are not using the driver directly, import it with the `blank identifier`:
+   ```go
+   package main
+
+   import "_ github.com/lib/pq"
+   ```
+
+### Get a database connection pool
+
+The Postgres data source name (DSN) uses the following format:
+
+```
+postgres://<username>:<password>@<host>/<dbname>
+```
 
 
 ## Repository pattern
