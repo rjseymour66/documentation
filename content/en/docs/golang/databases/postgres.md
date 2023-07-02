@@ -4,7 +4,10 @@ weight: 30
 description: >
   Connecting and working with PostgreSQL and Go.
 ---
+Links:
 
+- [Official documentation](https://www.postgresql.org/docs/current/datatype.html)
+- [Blog post: CHAR(x) vs. VARCHAR(x) vs. VARCHAR vs. TEXT ](https://www.depesz.com/2010/03/02/charx-vs-varcharx-vs-varchar-vs-text/)
 
 ## Import the driver
 
