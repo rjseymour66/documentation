@@ -1,6 +1,6 @@
 ---
 title: "Concurrency"
-weight: 50
+weight: 70
 description: >
   Channels, Goroutines, Scheduling, and Synchronization.
 ---
