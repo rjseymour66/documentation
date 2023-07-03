@@ -5,6 +5,63 @@ description: >
   Design patterns for Go and database models.
 ---
 
+### Data access layer
+
+You want to encapsulate the code that works with MySQL in its own package. Create a new file in `root/internal/models/project.go` for your SQL data model.
+
+The data access layer consists of the following:
+- An interface that holds method signatures for the data object. This facilitates testing with mocks:
+  ```go
+  type SnippetModelInterface interface {
+	  Insert(title string, content string, expires int)   (int, error)
+	  Get(id int) (*Example, error)
+	  Latest() ([]*Example, error)
+  }
+  ```
+- A struct that holds data for each individual object that you want to commit to the database. Generally, the struct fields should correspond to the table columns:
+  ```go
+  type Example struct {
+    ID      int
+    Title   string
+    Content string
+    Created time.Time
+    Expires time.Time
+  }
+  ```
+- An `ExampleModel` struct that wraps an `sql.DB` connection pool. This is the type that you use as the receiver on the interface methods:
+  ```go
+  type ExampleModel struct {
+     DB *sql.DB
+  }
+  ```
+- Interface method implementations (`Insert`, `Get`, etc.)
+
+After you create the data access layer, you have to import it into the `main` function and inject it as a dependency into your main application struct:
+
+```go
+type application struct {
+	...
+    dataAccessObj   models.ExampleModelInterface
+}
+
+func main() {
+	...
+    db, err := openDB(*dsn)
+    if err != nil {
+        errorLog.Fatal(err)
+    }
+    defer db.Close()
+
+
+    app := &application{
+        errorLog:      errorLog,
+        infoLog:       infoLog,
+        dataAccessObj: &models.ExampleModel{DB: db},
+    }
+	...
+}
+```
+
 ## Repository pattern
 
 The repository pattern creates a data access layer--an interface between your Go code and the database. It consists of the following structs and functions:

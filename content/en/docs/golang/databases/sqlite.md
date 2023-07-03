@@ -1,6 +1,6 @@
 ---
 title: "SQLite"
-weight: 40
+weight: 50
 description: >
   Connecting and working with SQLite and Go.
 ---

@@ -1,6 +1,6 @@
 ---
 title: "PostgreSQL"
-weight: 30
+weight: 40
 description: >
   Connecting and working with PostgreSQL and Go.
 ---
@@ -36,3 +36,5 @@ If you set the DSN as an environment variable, you can use it to authenticate to
 ```shell
 $ psql $POSTGRES_DSN_ENV_VAR
 ```
+
+## Viewing 
