@@ -73,7 +73,7 @@ ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 defer cancel()
 ...
 ```
-`context.WithTimeout()` returns the context and a `cancel` function to cancel the context when it is no longer required. You should defer the `cancel` function.
+`context.WithTimeout()` returns the context and a `cancel` function to cancel the context when it is no longer required. You should defer the `cancel` function release resources and prevent memory leaks.
 
 If the context expires because of the timeout, you can check the context's `.Err()' function for a `DeadlineExceeded` error:
 

@@ -114,3 +114,19 @@ $ curl -i localhost:4000/v1/healthcheck
 ```
 
 `-d` flag
+
+The following command annotates the HTTP response with the total time for the command to complete:
+
+```shell
+$ curl -w '\nTime: %{time_total}s \n' localhost:4000/v1/movies/1
+```
+
+https://blog.josephscott.org/2011/10/14/timing-details-with-curl/
+
+## xargs TODO
+
+https://man7.org/linux/man-pages/man1/xargs.1.html
+
+```shell
+$ xargs -I % -P8 curl -X PATCH -d '{"runtime": "97 mins"}' "localhost:4000/v1/movies/4" < <(printf '%s\n' {1..8})
+```

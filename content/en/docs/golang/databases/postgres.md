@@ -37,4 +37,12 @@ If you set the DSN as an environment variable, you can use it to authenticate to
 $ psql $POSTGRES_DSN_ENV_VAR
 ```
 
-## Viewing 
+
+## Viewing databases
+
+PostgreSQL uses meta commands, such as `/dt <table-name>`.
+
+
+## TODO 
+
+`pq.Array()` method

@@ -225,3 +225,48 @@ func (r *mysqlRepo) RetrieveAlbumByID(id int64) (Album, error) {
 	return alb, nil
 }
 ```
+
+## Updates (full and partial)
+
+Full updates to a database record generally follow these steps:
+1. Get the query param ID from the request URL to identify the record.
+2. Fetch the record from the database with the ID.
+3. Unmarshal the JSON request body into memory (a Go input struct).
+4. Copy the data fromt the Go input struct into a DB record struct, either with assignment (`record.x = input.x`) or type validation (`if x == nil {...}`).
+5. Validate the new DB record.
+6. Call the `Update()` method to update the record in the DB.
+7. Write the JSON response to the client.
+
+### Partial updates
+
+Partial updates use the `PATCH` HTTP method to update just a portion of the database record. Partial updates require that you distinguish between a client request that sends a zero value or no value for a field. JSON is usually unmarshalled into fields of type `string`. The Go string type zero value is an empty string (`""`), which makes this difficult to determine the client's intent.
+
+You can change the `string` fields to pointers, which makes the zero value `nil`. When you copy the data from the Go input struct to the database record struct (step 4, above), you can check whether the input is `nil` (not provided) or blank (`""`):
+
+```go
+// 1. get param
+// 2. fetch record with param
+// 3. create input struct and marshal req into it
+// 4. ...
+if input.Field != nil {
+	dbStruct.Field = input.Field
+}
+// ... for additional fields
+// 5. validation
+// 6. Update()
+// 7. JSON resp to client
+```
+
+## Concurrent updates
+
+A Go server handles each request in its own goroutine. This means that there are situations where two clients request to update the same record at the same time. This is a race condition known as a _data race_.
+
+Manage data races with [optimistic or pessimistic locking](https://stackoverflow.com/questions/129329/optimistic-vs-pessimistic-locking/129397#129397). Optimistic locking means that the `Update()` method verifies the database record version number before the update:
+
+```sql
+UPDATE dbrecord
+SET row1 = $1, row2 = $2, ..., version = version + 1
+WHERE id = $N AND version = $N+1
+RETURNING version
+```
+If this query returns no rows, then the record was deleted or edited before the change was committed to the database, and no update is created.

@@ -11,8 +11,8 @@ description: >
 
 Go provides the following three methods for executing SQL queries with the connection pool:
 - `DB.Query()`: `SELECT` queries that return multiple rows.
-- `DB.QueryRow()`: `SELECT` queries that return a single row.
-- `DB.Exec()`: Queries like `INSERT` and `DELETE` that return no rows.
+- `DB.QueryRow()`, `DB.QueryRowContext()`: `SELECT` queries that return a single row. Use the `*Context()` method to implement a timeout.
+- `DB.Exec()`, `DB.ExecContext()`: Queries like `INSERT` and `DELETE` that return no rows. Use the `*Context()` method to implement a timeout.
 
 Create (add) data to a database with the `Exec()` function. It returns a `Result` type whose interface defines the following functions:
 - `LastInsertId() (int64, error)`: verify that you added a row.
