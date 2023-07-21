@@ -86,7 +86,7 @@ The values after the `?` are _query strings_, and they take the form of `key`=`v
 id, err := r.URL.Query().Get("id")
 ```
 
-The proceeding example uses the `Query()` method on the request's `URL` field. `Query()` returns a `Values` type, which has method `Get()` that can return a `string` value associated with the `key` provided to `Get()`.
+The proceeding example uses the `Query()` method on the request's `URL` field. `Query()` returns a `Values` type, which is essenitally a map that holds all the query parameter key-value pairs. The `Values` type has the `Get()` method that returns a `string` value associated with the `key` provided to `Get()`.
 
 
 ## Responses

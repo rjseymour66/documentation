@@ -270,3 +270,6 @@ WHERE id = $N AND version = $N+1
 RETURNING version
 ```
 If this query returns no rows, then the record was deleted or edited before the change was committed to the database, and no update is created.
+
+## Query Timeouts 
+

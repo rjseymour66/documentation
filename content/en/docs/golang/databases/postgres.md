@@ -46,3 +46,13 @@ PostgreSQL uses meta commands, such as `/dt <table-name>`.
 ## TODO 
 
 `pq.Array()` method
+
+## Array operators and functions
+
+You can add logic to your queries with [array functions and operators](https://www.postgresql.org/docs/9.6/functions-array.html).
+
+For example, the `@>` operator checks whether an array contains a value. The following expression returns `true` if the `genres` array contains the value that the `$2` placeholder represents, or if the placeholder is empty:
+
+```sql
+(genres @> $2 OR $2 = '{}')
+```
