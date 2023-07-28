@@ -808,6 +808,95 @@ Now, the `LoadAndSave()` middleware checks each incoming request for a cookie. I
 
 Any changes to session data are updated in the handler request context, and then the middleware updates the changes when it returns.
 
+## Shutdown gracefully
+
+You might have concurrent code that is still running when your server fails, and you need to make sure that the process completes before the server stops. You can add a WaitGroup to the application struct, and wait until all goroutines complete before you shut down the server.
+
+Add the WaitGroup to the application struct:
+
+```go
+// cmd/api/main.go
+type application struct {
+    config config
+    logger *jsonlog.Logger
+    models data.Models
+    mailer mailer.Mailer
+    wg     sync.WaitGroup
+}
+```
+
+Wait for all goroutines to complete before you shutdown the server:
+
+```go
+// cmd/api/server.go
+
+func (app *application) serve() error {
+    srv := &http.Server{
+        Addr:         fmt.Sprintf(":%d", app.config.port),
+        Handler:      app.routes(),
+        IdleTimeout:  time.Minute,
+        ReadTimeout:  5 * time.Second,
+        WriteTimeout: 10 * time.Second,
+    }
+
+    shutdownError := make(chan error)
+
+    go func() {
+        quit := make(chan os.Signal, 1)
+        signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+        s := <-quit
+
+        app.logger.PrintInfo("caught signal", map[string]string{
+            "signal": s.String(),
+        })
+
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
+
+        // Call Shutdown() on the server like before, but now we only send on the
+        // shutdownError channel if it returns an error.
+        err := srv.Shutdown(ctx)
+        if err != nil {
+            shutdownError <- err
+        }
+
+        // Log a message to say that we're waiting for any background goroutines to
+        // complete their tasks.
+        app.logger.PrintInfo("completing background tasks", map[string]string{
+            "addr": srv.Addr,
+        })
+
+        // Call Wait() to block until our WaitGroup counter is zero --- essentially
+        // blocking until the background goroutines have finished. Then we return nil on
+        // the shutdownError channel, to indicate that the shutdown completed without
+        // any issues.
+        app.wg.Wait()
+        shutdownError <- nil
+    }()
+
+    app.logger.PrintInfo("starting server", map[string]string{
+        "addr": srv.Addr,
+        "env":  app.config.env,
+    })
+
+    err := srv.ListenAndServe()
+    if !errors.Is(err, http.ErrServerClosed) {
+        return err
+    }
+
+    err = <-shutdownError
+    if err != nil {
+        return err
+    }
+
+    app.logger.PrintInfo("stopped server", map[string]string{
+        "addr": srv.Addr,
+    })
+
+    return nil
+}
+```
+
 ## Existing docs
 
 
